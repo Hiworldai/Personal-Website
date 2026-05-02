@@ -13,6 +13,11 @@ dist
 dist-ssr
 coverage
 *.local
+.env
+.env.*
+!.env.example
+.codex-run/
+responsive-report/
 
 /cypress/videos/
 /cypress/screenshots/
@@ -26,10 +31,3 @@ coverage
 *.njsproj
 *.sln
 *.sw?
-
-# Local web app build and test artifacts
-homepage-sys-main/CLIENT/.codex-run/
-homepage-sys-main/CLIENT/responsive-report/
-homepage-sys-main/CLIENT/dist/
-homepage-sys-main/CLIENT/node_modules/
-homepage-sys-main/CLIENT/.env

@@ -1,5 +1,10 @@
 <template>
-  <section class="album-section" aria-labelledby="album-title">
+  <section
+    ref="sectionRef"
+    class="album-section"
+    :class="{ 'is-static': !isMotionEnabled }"
+    aria-labelledby="album-title"
+  >
     <div class="album-shell">
       <div class="section-heading">
         <p class="eyebrow">Photo Album</p>
@@ -10,33 +15,99 @@
       <div class="album-flow" aria-label="Photo album flow">
         <div
           v-for="(row, rowIndex) in albumRows"
-          :key="`album-row-${rowIndex}`"
-          :ref="(element) => setTrackRef(element, rowIndex)"
+          :key="row.id"
           class="album-track"
           :class="row.directionClass"
+          @mouseenter="setTrackPaused(rowIndex, true)"
+          @mouseleave="setTrackPaused(rowIndex, false)"
         >
-          <div class="album-track-inner">
-            <button
-              v-for="(item, itemIndex) in row.items"
-              :key="item.originalIndex"
-              :ref="(element) => setCardRef(element, rowIndex, itemIndex)"
-              class="album-card"
-              type="button"
-              @click="openPhoto(item.originalIndex)"
-            >
-              <img
-                :src="getCardPreviewSrc(item)"
-                :alt="item.title"
-                class="album-media"
-                decoding="async"
-                @load="handleMediaLoad"
+          <div class="album-mask-frame">
+            <div class="album-viewport">
+              <div
+                :ref="(element) => setRailRef(element, rowIndex)"
+                class="album-rail"
+                :style="getRailStyle(rowIndex)"
               >
-              <span v-if="isVideoItem(item)" class="album-video-badge">Video</span>
-              <span class="album-card-copy">
-                <strong>{{ item.title }}</strong>
-                <small>{{ item.description }}</small>
-              </span>
-            </button>
+                <div
+                  :ref="(element) => setBaseGroupRef(element, rowIndex)"
+                  class="album-group"
+                >
+                  <button
+                    v-for="item in row.baseItems"
+                    :key="`base-${item.originalIndex}`"
+                    class="album-card"
+                    type="button"
+                    @mouseenter="primeMediaForItem(item)"
+                    @focus="primeMediaForItem(item)"
+                    @click="openPhoto(item.originalIndex)"
+                  >
+                    <picture class="album-media-frame">
+                      <source :srcset="getCardPreviewWebpSrc(item)" type="image/webp">
+                      <img
+                        :src="getCardPreviewSrc(item)"
+                        :alt="item.title"
+                        class="album-media"
+                        loading="lazy"
+                        decoding="async"
+                        fetchpriority="low"
+                        @load="handleMediaLoad"
+                      >
+                    </picture>
+                    <span v-if="isVideoItem(item)" class="album-video-badge">Video</span>
+                    <span class="album-card-copy">
+                      <strong>{{ item.title }}</strong>
+                      <small>{{ item.description }}</small>
+                    </span>
+                  </button>
+                </div>
+
+                <div
+                  v-if="isMotionEnabled"
+                  class="album-group album-group-clone"
+                >
+                  <button
+                    v-for="item in row.baseItems"
+                    :key="`clone-${item.originalIndex}`"
+                    class="album-card"
+                    type="button"
+                    tabindex="-1"
+                    @mouseenter="primeMediaForItem(item)"
+                    @click="openPhoto(item.originalIndex)"
+                  >
+                    <picture class="album-media-frame">
+                      <source :srcset="getCardPreviewWebpSrc(item)" type="image/webp">
+                      <img
+                        :src="getCardPreviewSrc(item)"
+                        :alt="item.title"
+                        class="album-media"
+                        loading="lazy"
+                        decoding="async"
+                        fetchpriority="low"
+                      >
+                    </picture>
+                    <span v-if="isVideoItem(item)" class="album-video-badge">Video</span>
+                    <span class="album-card-copy">
+                      <strong>{{ item.title }}</strong>
+                      <small>{{ item.description }}</small>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <span class="album-fade album-fade-left" aria-hidden="true">
+              <span class="album-fade-glass"></span>
+            </span>
+            <span class="album-fade album-fade-right" aria-hidden="true">
+              <span class="album-fade-glass"></span>
+            </span>
+            <span
+              class="album-frame-shadow album-frame-shadow-left"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="album-frame-shadow album-frame-shadow-right"
+              aria-hidden="true"
+            ></span>
           </div>
         </div>
       </div>
@@ -61,23 +132,27 @@
           <video
             v-if="selectedPhoto && isVideoItem(selectedPhoto)"
             :src="selectedPhoto.src"
+            :poster="getPreviewSrc(selectedPhoto.poster || selectedPhoto.src)"
             controls
             autoplay
             playsinline
+            preload="metadata"
             class="modal-media"
             :style="modalMediaStyle"
             @mousedown="startModalPan"
           ></video>
-          <img
-            v-else-if="selectedPhoto"
-            :src="selectedPhoto.src"
-            :alt="selectedPhoto.title"
-            class="modal-media"
-            :style="modalMediaStyle"
-            loading="eager"
-            decoding="async"
-            @mousedown="startModalPan"
-          >
+          <picture v-else-if="selectedPhoto" class="modal-picture">
+            <source :srcset="getDisplayWebpSrc(selectedPhoto.src)" type="image/webp">
+            <img
+              :src="getDisplaySrc(selectedPhoto.src)"
+              :alt="selectedPhoto.title"
+              class="modal-media"
+              :style="modalMediaStyle"
+              loading="eager"
+              decoding="async"
+              @mousedown="startModalPan"
+            >
+          </picture>
           <figcaption>
             <strong>{{ selectedPhoto.title }}</strong>
             <span>{{ selectedPhoto.description }}</span>
@@ -94,8 +169,7 @@
 import { computed, nextTick, onBeforeUnmount, onBeforeUpdate, onMounted, ref } from 'vue';
 import { albumCopy, galleryItems } from '../../content/siteContent';
 
-const LEFT_ROW_SPEED = 42;
-const RIGHT_ROW_SPEED = 38;
+const ROW_SPEEDS = [34, 28];
 const MIN_MODAL_ZOOM = 0.6;
 const MAX_MODAL_ZOOM = 3;
 const MODAL_ZOOM_STEP = 0.12;
@@ -104,13 +178,20 @@ const selectedPhotoIndex = ref(-1);
 const modalZoom = ref(1);
 const modalPan = ref({ x: 0, y: 0 });
 const isModalPanning = ref(false);
-const trackElements = ref([]);
-const cardElements = ref([]);
+const isMotionEnabled = ref(false);
+const isSectionVisible = ref(false);
+const sectionRef = ref(null);
+const railElements = ref([]);
+const baseGroupElements = ref([]);
+const primedMediaSources = new Set();
+
 let animationFrameId = 0;
 let lastFrameTime = 0;
 let mediaLoadTimer = 0;
 let lastPanPoint = { x: 0, y: 0 };
 let trackStates = [];
+let sectionObserver = null;
+let resizeObserver = null;
 
 const selectedPhoto = computed(() => {
   if (selectedPhotoIndex.value < 0) return null;
@@ -119,24 +200,25 @@ const selectedPhoto = computed(() => {
 
 const albumRows = computed(() => {
   const midpoint = Math.ceil(galleryItems.length / 2);
-  const rows = [
+
+  return [
     {
+      id: 'album-row-top',
       direction: 'left',
       directionClass: 'to-left',
-      items: galleryItems.slice(0, midpoint)
+      baseItems: galleryItems.slice(0, midpoint)
     },
     {
+      id: 'album-row-bottom',
       direction: 'right',
       directionClass: 'to-right',
-      items: galleryItems.slice(midpoint)
+      baseItems: galleryItems.slice(midpoint)
     }
-  ];
-
-  return rows
-    .filter((row) => row.items.length)
+  ]
+    .filter((row) => row.baseItems.length)
     .map((row, rowIndex) => ({
       ...row,
-      items: row.items.map((item, index) => ({
+      baseItems: row.baseItems.map((item, index) => ({
         ...item,
         originalIndex: rowIndex === 0 ? index : midpoint + index
       }))
@@ -147,18 +229,51 @@ const modalMediaStyle = computed(() => ({
   transform: `translate3d(${modalPan.value.x}px, ${modalPan.value.y}px, 0) scale(${modalZoom.value})`
 }));
 
-const isVideoItem = (item) => /\.mp4$/i.test(item.src);
+const isVideoItem = (item) => /\.mp4$/i.test(item?.src || '');
 
 const getGalleryFileBaseName = (src = '') => {
   const fileName = src.split('/').pop() || '';
   return fileName.replace(/\.[^.]+$/, '');
 };
 
-const getThumbnailSrc = (src) => `/gallery/thumbs/${getGalleryFileBaseName(src)}.jpg`;
+const getPreviewSrc = (src) => `/gallery/preview/${getGalleryFileBaseName(src)}.jpg`;
+const getPreviewWebpSrc = (src) => `/gallery/preview/${getGalleryFileBaseName(src)}.webp`;
+const getDisplaySrc = (src) => `/gallery/display/${getGalleryFileBaseName(src)}.jpg`;
+const getDisplayWebpSrc = (src) => `/gallery/display/${getGalleryFileBaseName(src)}.webp`;
 
-const getCardPreviewSrc = (item) => getThumbnailSrc(isVideoItem(item) ? item.poster : item.src);
+const getCardPreviewSrc = (item) => getPreviewSrc(isVideoItem(item) ? item.poster : item.src);
+const getCardPreviewWebpSrc = (item) => getPreviewWebpSrc(isVideoItem(item) ? item.poster : item.src);
 
 const clampValue = (value, min, max) => Math.min(max, Math.max(min, value));
+
+const primeMediaForItem = (item) => {
+  const source = item?.src || '';
+  if (!source || primedMediaSources.has(source)) return;
+
+  primedMediaSources.add(source);
+
+  if (isVideoItem(item)) {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.src = source;
+    video.load();
+    return;
+  }
+
+  const picture = new Image();
+  picture.decoding = 'async';
+  picture.src = getDisplaySrc(source);
+};
+
+const shouldAnimateAlbum = () => {
+  if (typeof window === 'undefined') return false;
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false;
+  if (window.matchMedia?.('(max-width: 820px)').matches) return false;
+  if (navigator.maxTouchPoints > 0) return false;
+  if (navigator.deviceMemory && navigator.deviceMemory <= 4) return false;
+  if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) return false;
+  return true;
+};
 
 const resetModalZoom = () => {
   modalZoom.value = 1;
@@ -171,81 +286,106 @@ const stopModalPan = () => {
   window.removeEventListener('mouseup', stopModalPan);
 };
 
-const setTrackRef = (element, rowIndex) => {
+const setRailRef = (element, rowIndex) => {
   if (element) {
-    trackElements.value[rowIndex] = element;
+    railElements.value[rowIndex] = element;
   }
 };
 
-const setCardRef = (element, rowIndex, itemIndex) => {
-  if (!element) return;
-
-  if (!cardElements.value[rowIndex]) {
-    cardElements.value[rowIndex] = [];
+const setBaseGroupRef = (element, rowIndex) => {
+  if (element) {
+    baseGroupElements.value[rowIndex] = element;
   }
-
-  cardElements.value[rowIndex][itemIndex] = element;
 };
 
 const resetTrackRefs = () => {
-  trackElements.value = [];
-  cardElements.value = [];
+  railElements.value = [];
+  baseGroupElements.value = [];
 };
 
-const measureCssLength = (owner, value) => {
-  const probe = document.createElement('div');
-  probe.style.position = 'absolute';
-  probe.style.visibility = 'hidden';
-  probe.style.width = value;
-  owner.appendChild(probe);
-  const pixels = probe.getBoundingClientRect().width;
-  probe.remove();
+const getTrackState = (rowIndex) => trackStates[rowIndex] || null;
 
-  return pixels;
+const getTrackTransform = (state) => {
+  if (!state?.baseWidth) return 'translate3d(0, 0, 0)';
+
+  if (state.direction === 'right') {
+    return `translate3d(${state.offset - state.baseWidth}px, 0, 0)`;
+  }
+
+  return `translate3d(${-state.offset}px, 0, 0)`;
+};
+
+const applyTrackTransforms = () => {
+  trackStates.forEach((state) => {
+    if (!state?.rail) return;
+    state.rail.style.transform = getTrackTransform(state);
+  });
 };
 
 const syncAlbumTrackMetrics = async () => {
+  if (!isMotionEnabled.value) return;
+
   await nextTick();
 
-  trackStates = albumRows.value
-    .map((row, rowIndex) => {
-      const track = trackElements.value[rowIndex];
-      const cards = (cardElements.value[rowIndex] || []).filter(Boolean);
-      const firstCard = cards[0];
+  trackStates = albumRows.value.map((row, rowIndex) => {
+    const rail = railElements.value[rowIndex];
+    const baseGroup = baseGroupElements.value[rowIndex];
+    const previousState = trackStates[rowIndex];
+    const computedRailStyle = rail ? window.getComputedStyle(rail) : null;
+    const groupGap = computedRailStyle ? Number.parseFloat(computedRailStyle.columnGap || computedRailStyle.gap || '0') || 0 : 0;
+    const baseWidth = Math.round((baseGroup?.getBoundingClientRect().width || 0) + groupGap);
 
-      if (!track || !firstCard || !cards.length) {
-        return null;
-      }
-
-      const trackWidth = track.getBoundingClientRect().width;
-      const cardRect = firstCard.getBoundingClientRect();
-      const gap = measureCssLength(track, getComputedStyle(track).getPropertyValue('--album-gap').trim());
-      const step = cardRect.width + gap;
-      const totalWidth = step * cards.length;
-      const previousState = trackStates[rowIndex];
-
-      if (!trackWidth || !cardRect.width || !cardRect.height || totalWidth <= trackWidth) {
-        return null;
-      }
-
-      track.style.setProperty('--album-track-height', `${cardRect.height}px`);
-
+    if (!rail || !baseGroup || !baseWidth) {
       return {
-        cardWidth: cardRect.width,
-        cards,
+        baseWidth: 0,
         direction: row.direction,
-        offset: previousState ? previousState.offset % totalWidth : 0,
-        speed: row.direction === 'left' ? LEFT_ROW_SPEED : RIGHT_ROW_SPEED,
-        step,
-        totalWidth,
-        track,
-        trackWidth
+        offset: 0,
+        paused: previousState?.paused || false,
+        rail: rail || null,
+        speed: ROW_SPEEDS[rowIndex] || ROW_SPEEDS[0]
       };
-    })
-    .filter(Boolean);
+    }
+
+    const previousOffset = previousState?.offset || 0;
+    const normalizedOffset = ((previousOffset % baseWidth) + baseWidth) % baseWidth;
+
+    return {
+      baseWidth,
+      direction: row.direction,
+      offset: normalizedOffset,
+      paused: previousState?.paused || false,
+      rail,
+      speed: ROW_SPEEDS[rowIndex] || ROW_SPEEDS[0]
+    };
+  });
+
+  applyTrackTransforms();
+};
+
+const getRailStyle = (rowIndex) => {
+  const state = getTrackState(rowIndex);
+
+  if (!isMotionEnabled.value || !state) {
+    return {};
+  }
+
+  return {
+    transform: getTrackTransform(state)
+  };
+};
+
+const setTrackPaused = (rowIndex, paused) => {
+  const state = trackStates[rowIndex];
+  if (!state) return;
+  state.paused = paused;
 };
 
 const renderAlbumTracks = (timestamp) => {
+  if (!isMotionEnabled.value) {
+    animationFrameId = 0;
+    return;
+  }
+
   if (!lastFrameTime) {
     lastFrameTime = timestamp;
   }
@@ -253,37 +393,38 @@ const renderAlbumTracks = (timestamp) => {
   const elapsedSeconds = Math.min((timestamp - lastFrameTime) / 1000, 0.05);
   lastFrameTime = timestamp;
 
+  if (!isSectionVisible.value || document.hidden || selectedPhoto.value) {
+    animationFrameId = requestAnimationFrame(renderAlbumTracks);
+    return;
+  }
+
   trackStates.forEach((state) => {
-    if (state.track.matches(':hover')) {
-      return;
+    if (!state?.baseWidth || state.paused) return;
+
+    state.offset += state.speed * elapsedSeconds;
+
+    if (state.offset >= state.baseWidth) {
+      state.offset -= state.baseWidth;
     }
-
-    state.offset = (state.offset + state.speed * elapsedSeconds) % state.totalWidth;
-
-    state.cards.forEach((card, index) => {
-      let x = index * state.step + (state.direction === 'left' ? -state.offset : state.offset);
-
-      while (x < -state.step) {
-        x += state.totalWidth;
-      }
-
-      while (x > state.trackWidth) {
-        x -= state.totalWidth;
-      }
-
-      card.style.transform = `translate3d(${x}px, 0, 0)`;
-    });
   });
 
+  applyTrackTransforms();
   animationFrameId = requestAnimationFrame(renderAlbumTracks);
 };
 
 const handleMediaLoad = () => {
+  if (!isMotionEnabled.value) return;
+
   window.clearTimeout(mediaLoadTimer);
   mediaLoadTimer = window.setTimeout(syncAlbumTrackMetrics, 80);
 };
 
 const openPhoto = (index) => {
+  const item = galleryItems[index];
+  if (item) {
+    primeMediaForItem(item);
+  }
+
   resetModalZoom();
   selectedPhotoIndex.value = index;
   document.body.classList.add('modal-open');
@@ -349,25 +490,58 @@ const handleKeydown = (event) => {
   if (event.key === 'ArrowRight') showNextPhoto();
 };
 
+const handleResize = () => {
+  syncAlbumTrackMetrics();
+};
+
 onBeforeUpdate(() => {
   resetTrackRefs();
 });
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
-  window.addEventListener('load', syncAlbumTrackMetrics);
-  window.addEventListener('resize', syncAlbumTrackMetrics);
+  isMotionEnabled.value = shouldAnimateAlbum();
 
-  syncAlbumTrackMetrics();
-  animationFrameId = requestAnimationFrame(renderAlbumTracks);
+  if ('IntersectionObserver' in window && sectionRef.value) {
+    sectionObserver = new IntersectionObserver((entries) => {
+      isSectionVisible.value = entries.some((entry) => entry.isIntersecting);
+    }, {
+      rootMargin: '240px 0px'
+    });
+    sectionObserver.observe(sectionRef.value);
+  } else {
+    isSectionVisible.value = true;
+  }
+
+  if ('ResizeObserver' in window) {
+    resizeObserver = new ResizeObserver(() => {
+      syncAlbumTrackMetrics();
+    });
+  }
+
+  nextTick(() => {
+    if (!isMotionEnabled.value) return;
+
+    baseGroupElements.value.forEach((element) => {
+      if (element && resizeObserver) {
+        resizeObserver.observe(element);
+      }
+    });
+
+    syncAlbumTrackMetrics();
+    animationFrameId = requestAnimationFrame(renderAlbumTracks);
+  });
+
+  window.addEventListener('resize', handleResize);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown);
-  window.removeEventListener('load', syncAlbumTrackMetrics);
-  window.removeEventListener('resize', syncAlbumTrackMetrics);
+  window.removeEventListener('resize', handleResize);
   cancelAnimationFrame(animationFrameId);
   window.clearTimeout(mediaLoadTimer);
+  resizeObserver?.disconnect();
+  sectionObserver?.disconnect();
   stopModalPan();
   document.body.classList.remove('modal-open');
 });
@@ -376,8 +550,9 @@ onBeforeUnmount(() => {
 <style scoped>
 .album-section {
   --accent-blue: #40dfff;
+  --album-gap: 0.9rem;
   position: relative;
-  padding: 2rem 1.25rem 6rem;
+  padding: 2.25rem 1.25rem 6rem;
   overflow-x: hidden;
   overflow-y: visible;
   color: #193a53;
@@ -409,15 +584,15 @@ onBeforeUnmount(() => {
 .album-shell {
   position: relative;
   z-index: 1;
-  width: min(100%, 920px);
+  width: min(100%, 1120px);
   margin: 0 auto;
 }
 
 .section-heading {
   display: grid;
   gap: 0.45rem;
-  max-width: 42rem;
-  margin-bottom: 1.2rem;
+  max-width: 45rem;
+  margin-bottom: 1.45rem;
 }
 
 .eyebrow,
@@ -451,40 +626,124 @@ onBeforeUnmount(() => {
   line-height: 1.7;
 }
 
-.section-heading span {
-  color: var(--accent-blue);
-}
-
 .album-flow {
-  --album-gap: 0.75rem;
   display: grid;
-  gap: var(--album-gap);
+  gap: 1rem;
+  min-width: 0;
 }
 
 .album-track {
-  --album-track-height: 12.4rem;
-  position: relative;
-  height: var(--album-track-height);
-  overflow: hidden;
-  padding: 0.15rem 0;
-  mask-image: linear-gradient(90deg, transparent 0, #000 10%, #000 90%, transparent 100%);
-}
-
-.album-track-inner {
   position: relative;
   width: 100%;
-  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.album-mask-frame {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.album-viewport {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.2rem 0;
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.12) 2.5%,
+    rgba(0, 0, 0, 0.72) 8.5%,
+    #000 16%,
+    #000 84%,
+    rgba(0, 0, 0, 0.72) 91.5%,
+    rgba(0, 0, 0, 0.12) 97.5%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.12) 2.5%,
+    rgba(0, 0, 0, 0.72) 8.5%,
+    #000 16%,
+    #000 84%,
+    rgba(0, 0, 0, 0.72) 91.5%,
+    rgba(0, 0, 0, 0.12) 97.5%,
+    transparent 100%
+  );
+}
+
+.album-fade,
+.album-frame-shadow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.album-fade {
+  display: none;
+}
+
+.album-fade-glass {
+  display: none;
+}
+
+.album-fade-left {
+  left: 0;
+}
+
+.album-fade-left .album-fade-glass {
+  display: none;
+}
+
+.album-fade-right {
+  right: 0;
+}
+
+.album-fade-right .album-fade-glass {
+  display: none;
+}
+
+.album-frame-shadow {
+  display: none;
+}
+
+.album-frame-shadow-left {
+  left: 0;
+}
+
+.album-frame-shadow-right {
+  right: 0;
+}
+
+.album-rail {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: max-content;
+  gap: var(--album-gap);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.album-group {
+  display: flex;
+  gap: var(--album-gap);
 }
 
 .album-card {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   overflow: hidden;
-  flex: none;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   display: grid;
-  width: clamp(10rem, 18vw, 12.1rem);
+  width: clamp(10.5rem, 17vw, 12rem);
   min-height: 12.4rem;
   padding: 0;
   border: 1px solid rgba(140, 199, 220, 0.26);
@@ -501,14 +760,25 @@ onBeforeUnmount(() => {
   color: #1f3d58;
   text-align: left;
   cursor: pointer;
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
 }
 
+.album-card:hover {
+  border-color: rgba(247, 238, 173, 0.4);
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.18),
+    0 0 24px rgba(64, 223, 255, 0.12),
+    0 0 18px rgba(247, 238, 173, 0.12);
+  transform: translateY(-2px);
+}
+
+.album-media-frame,
 .album-media {
   display: block;
   width: 100%;
-  height: 8.7rem;
+  height: 8.75rem;
+}
+
+.album-media {
   object-fit: cover;
   object-position: center;
   background:
@@ -553,15 +823,23 @@ onBeforeUnmount(() => {
   font-weight: 700;
   line-height: 1.35;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
 }
 
-.album-card:hover {
-  border-color: rgba(247, 238, 173, 0.4);
-  box-shadow:
-    0 18px 36px rgba(0, 0, 0, 0.26),
-    0 0 24px rgba(64, 223, 255, 0.12),
-    0 0 18px rgba(247, 238, 173, 0.12);
+.album-section.is-static .album-rail {
+  display: flex;
+  width: max-content;
+  gap: var(--album-gap);
+  transform: none !important;
+}
+
+.album-section.is-static .album-group {
+  display: flex;
+  gap: var(--album-gap);
+}
+
+.album-section.is-static .album-card {
+  width: clamp(10.5rem, 17vw, 12rem);
 }
 
 .photo-modal {
@@ -584,6 +862,11 @@ onBeforeUnmount(() => {
   max-width: min(82vw, 900px);
   margin: 0 auto;
   overflow: visible;
+}
+
+.modal-picture {
+  display: grid;
+  justify-items: center;
 }
 
 .modal-media {
@@ -661,14 +944,19 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 900px) {
+  .album-video-badge,
+  .photo-modal {
+    backdrop-filter: none;
+  }
+
   .album-shell {
-    width: min(100%, 780px);
+    width: min(100%, 900px);
   }
 }
 
 @media (max-width: 768px) {
   .album-section {
-    padding: 0.9rem 0 4rem;
+    padding: 1rem 0 4rem;
   }
 
   .album-shell {
@@ -676,18 +964,11 @@ onBeforeUnmount(() => {
   }
 
   .album-flow {
-    --album-gap: 0.65rem;
-    gap: 0.8rem;
     padding: 0 0.9rem;
   }
 
-  .album-track {
-    mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
-    padding: 0.15rem 0;
-  }
-
   .album-card {
-    width: min(68vw, 15.25rem);
+    width: min(70vw, 15rem);
     min-height: 11.9rem;
   }
 
@@ -698,10 +979,6 @@ onBeforeUnmount(() => {
   .album-card-copy {
     gap: 0.12rem;
     padding: 0.7rem 0.78rem 0.82rem;
-  }
-
-  .album-card-copy small {
-    -webkit-line-clamp: 1;
   }
 
   .photo-modal {
