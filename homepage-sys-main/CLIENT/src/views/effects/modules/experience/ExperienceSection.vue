@@ -38,7 +38,17 @@
 
         <article id="about-card" class="experience-card profile-card">
           <div class="profile-picture-frame">
-            <img :src="profileAvatarSrc" alt="Profile avatar">
+            <picture>
+              <source :srcset="profileAvatarWebpSrc" type="image/webp">
+              <img
+                :src="profileAvatarSrc"
+                alt="Profile avatar"
+                width="471"
+                height="480"
+                loading="lazy"
+                decoding="async"
+              >
+            </picture>
           </div>
           <div class="profile-copy">
             <p class="profile-role">{{ experienceCopy.role }}</p>
@@ -93,7 +103,17 @@
             <h2 id="guestbook-title">{{ guestbookCopy.title }}</h2>
             <p>{{ guestbookCopy.description }}</p>
             <div class="guestbook-image">
-              <img src="/gallery/guestbook-photo.jpg" alt="Guestbook image">
+              <picture>
+                <source srcset="/gallery/display/guestbook-photo.webp" type="image/webp">
+                <img
+                  src="/gallery/display/guestbook-photo.jpg"
+                  alt="Guestbook image"
+                  width="248"
+                  height="250"
+                  loading="lazy"
+                  decoding="async"
+                >
+              </picture>
             </div>
           </div>
 
@@ -148,10 +168,10 @@ import {
   contactLinkItems,
   experienceCopy,
   guestbookCopy,
-  profileAvatarSrc,
   recentItems,
   skillItems
-} from '../../content/siteContent';
+} from '../../content/experienceContent';
+import { profileAvatarSrc, profileAvatarWebpSrc } from '../../content/assetContent';
 
 const guestbookForm = ref({
   email: '',
@@ -567,6 +587,9 @@ onBeforeUnmount(() => {
   box-shadow: 0 10px 20px rgba(84, 118, 143, 0.08);
   animation: skill-float 4.8s ease-in-out infinite;
   animation-delay: var(--float-delay, 0s);
+  backface-visibility: hidden;
+  contain: paint;
+  transform: translateZ(0);
   will-change: transform;
 }
 
@@ -590,11 +613,17 @@ onBeforeUnmount(() => {
   transform: rotate(-1.6deg);
 }
 
+.profile-picture-frame picture,
+.guestbook-image picture,
 .profile-picture-frame img,
 .guestbook-image img {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.profile-picture-frame img,
+.guestbook-image img {
   object-fit: cover;
   object-position: 58% center;
   border-radius: 6px;

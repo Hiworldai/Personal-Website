@@ -37,8 +37,8 @@ try {
     'sudo systemctl restart nginx'
   ))
 
-  $remoteScript | ssh -i $KeyPath $Server "bash -s"
-  ssh -i $KeyPath $Server "curl -sS --max-time 10 http://127.0.0.1/api/health"
+  ($remoteScript -replace "`r", "") | ssh -i $KeyPath $Server "tr -d '\r' | bash -s"
+  ssh -i $KeyPath $Server "curl -sS --max-time 10 http://127.0.0.1:5177/api/health"
 }
 finally {
   Pop-Location

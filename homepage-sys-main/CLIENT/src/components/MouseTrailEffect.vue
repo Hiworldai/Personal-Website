@@ -100,6 +100,8 @@ let fallbackContext;
 let fallbackPoints = [];
 let fallbackLastTime = 0;
 let fallbackAnimationFrame = 0;
+let shouldTrackTouch = false;
+let canvasRect = null;
 
 const config = {
   textureDownsample: 1,
@@ -131,6 +133,14 @@ const hideBrokenAvatar = () => {
   avatarVisible.value = false;
 };
 
+const updateCanvasRect = () => {
+  const canvas = canvasRef.value;
+  if (!canvas) return null;
+
+  canvasRect = canvas.getBoundingClientRect();
+  return canvasRect;
+};
+
 const updateFade = () => {
   if (!props.showCopy) {
     textOpacity.value = 0;
@@ -147,7 +157,11 @@ const updateFade = () => {
 
 const getCanvasPoint = (event) => {
   const canvas = canvasRef.value;
-  const rect = canvas.getBoundingClientRect();
+  const rect = canvasRect || updateCanvasRect();
+  if (!canvas || !rect || !rect.width || !rect.height) {
+    return { x: 0, y: 0 };
+  }
+
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;
 
@@ -190,13 +204,25 @@ const handlePointerMove = (event) => {
 };
 
 const handleTouchMove = (event) => {
-  if (!event.touches.length) return;
-  event.preventDefault();
+  if (!shouldTrackTouch || !event.touches.length) return;
   movePointer(event.touches[0].clientX, event.touches[0].clientY);
+};
+
+const shouldEnableTouchTrail = () => {
+  if (typeof window === 'undefined') return false;
+  if (window.matchMedia?.('(hover: none), (pointer: coarse)').matches) return false;
+  if (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) return false;
+  return true;
 };
 
 const handleResize = () => {
   resizeCanvas();
+  shouldTrackTouch = shouldEnableTouchTrail();
+};
+
+const handleWindowScroll = () => {
+  canvasRect = null;
+  updateFade();
 };
 
 const compileShader = (type, source) => {
@@ -378,8 +404,11 @@ const resizeCanvas = () => {
   const canvas = canvasRef.value;
   if (!canvas) return;
 
-  const width = Math.max(1, canvas.clientWidth);
-  const height = Math.max(1, canvas.clientHeight);
+  const rect = updateCanvasRect();
+  if (!rect) return;
+
+  const width = Math.max(1, Math.round(rect.width));
+  const height = Math.max(1, Math.round(rect.height));
 
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width;
@@ -700,7 +729,6 @@ void main () {
   let lastTime = performance.now();
   const update = (time) => {
     animationFrame = requestAnimationFrame(update);
-    resizeCanvas();
 
     const dt = Math.min((time - lastTime) / 1000, 0.016);
     lastTime = time;
@@ -783,18 +811,19 @@ void main () {
 };
 
 onMounted(() => {
+  shouldTrackTouch = shouldEnableTouchTrail();
   updateFade();
   initFluid();
 
   window.addEventListener('resize', handleResize);
-  window.addEventListener('scroll', updateFade);
+  window.addEventListener('scroll', handleWindowScroll);
   window.addEventListener('pointermove', handlePointerMove);
-  window.addEventListener('touchmove', handleTouchMove, { passive: false });
+  window.addEventListener('touchmove', handleTouchMove, { passive: true });
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize);
-  window.removeEventListener('scroll', updateFade);
+  window.removeEventListener('scroll', handleWindowScroll);
   window.removeEventListener('pointermove', handlePointerMove);
   window.removeEventListener('touchmove', handleTouchMove);
   cancelAnimationFrame(animationFrame);
@@ -863,17 +892,18 @@ onBeforeUnmount(() => {
   height: 4px;
   border-radius: 50%;
   background: #d8feff;
-  transform: translateX(-50%);
+  transform: translate3d(-50%, 0, 0);
   animation: trail-scroll-dot 1s infinite;
+  will-change: transform, opacity;
 }
 
 @keyframes trail-scroll-dot {
   0% {
-    top: 8px;
+    transform: translate3d(-50%, 0, 0);
     opacity: 1;
   }
   100% {
-    top: 25px;
+    transform: translate3d(-50%, 17px, 0);
     opacity: 0;
   }
 }

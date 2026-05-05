@@ -167,13 +167,12 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onBeforeUpdate, onMounted, ref } from 'vue';
-import { albumCopy, galleryItems } from '../../content/siteContent';
+import { albumCopy, galleryItems } from '../../content/albumContent';
 
 const ROW_SPEEDS = [34, 28];
 const MIN_MODAL_ZOOM = 0.6;
 const MAX_MODAL_ZOOM = 3;
 const MODAL_ZOOM_STEP = 0.12;
-
 const selectedPhotoIndex = ref(-1);
 const modalZoom = ref(1);
 const modalPan = ref({ x: 0, y: 0 });
@@ -192,7 +191,6 @@ let lastPanPoint = { x: 0, y: 0 };
 let trackStates = [];
 let sectionObserver = null;
 let resizeObserver = null;
-
 const selectedPhoto = computed(() => {
   if (selectedPhotoIndex.value < 0) return null;
   return galleryItems[selectedPhotoIndex.value];
@@ -833,6 +831,18 @@ onBeforeUnmount(() => {
   transform: none !important;
 }
 
+.album-section.is-static .album-viewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.album-section.is-static .album-viewport::-webkit-scrollbar {
+  display: none;
+}
+
 .album-section.is-static .album-group {
   display: flex;
   gap: var(--album-gap);
@@ -840,6 +850,7 @@ onBeforeUnmount(() => {
 
 .album-section.is-static .album-card {
   width: clamp(10.5rem, 17vw, 12rem);
+  scroll-snap-align: start;
 }
 
 .photo-modal {
@@ -926,6 +937,8 @@ onBeforeUnmount(() => {
 }
 
 .modal-nav {
+  position: relative;
+  z-index: 3;
   width: 4rem;
   height: 4rem;
   font-size: 3rem;
@@ -970,6 +983,11 @@ onBeforeUnmount(() => {
   .album-card {
     width: min(70vw, 15rem);
     min-height: 11.9rem;
+  }
+
+  .album-section.is-static .album-viewport {
+    scroll-snap-type: x proximity;
+    padding-bottom: 0.35rem;
   }
 
   .album-media {
@@ -1017,6 +1035,10 @@ onBeforeUnmount(() => {
   .album-card {
     width: min(74vw, 14rem);
     min-height: 11.6rem;
+  }
+
+  .album-section.is-static .album-viewport {
+    scroll-snap-type: x mandatory;
   }
 
   .album-media {

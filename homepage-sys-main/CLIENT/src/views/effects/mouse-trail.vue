@@ -57,7 +57,6 @@ const heroFadeStyle = computed(() => {
 let scrollFrame = 0;
 let scrollAnimationFrame = 0;
 let albumLoadTimer = 0;
-let albumIdleCallback = 0;
 let albumObserver = null;
 
 const updateHeroProgress = () => {
@@ -119,12 +118,6 @@ const loadAlbumSection = () => {
   albumObserver?.disconnect();
   albumObserver = null;
   window.clearTimeout(albumLoadTimer);
-
-  if (albumIdleCallback && 'cancelIdleCallback' in window) {
-    window.cancelIdleCallback(albumIdleCallback);
-  }
-
-  albumIdleCallback = 0;
 };
 
 const scheduleAlbumLoad = () => {
@@ -132,7 +125,7 @@ const scheduleAlbumLoad = () => {
 
   const sentinel = albumSentinelRef.value;
   if (!sentinel || !('IntersectionObserver' in window)) {
-    albumLoadTimer = window.setTimeout(loadAlbumSection, 1400);
+    albumLoadTimer = window.setTimeout(loadAlbumSection, 5000);
     return;
   }
 
@@ -141,15 +134,9 @@ const scheduleAlbumLoad = () => {
       loadAlbumSection();
     }
   }, {
-    rootMargin: '800px 0px'
+    rootMargin: '520px 0px'
   });
   albumObserver.observe(sentinel);
-
-  if ('requestIdleCallback' in window) {
-    albumIdleCallback = window.requestIdleCallback(loadAlbumSection, { timeout: 2200 });
-  } else {
-    albumLoadTimer = window.setTimeout(loadAlbumSection, 1800);
-  }
 };
 
 onMounted(() => {
@@ -165,9 +152,6 @@ onBeforeUnmount(() => {
   cancelAnimationFrame(scrollFrame);
   cancelAnimationFrame(scrollAnimationFrame);
   clearTimeout(albumLoadTimer);
-  if (albumIdleCallback && 'cancelIdleCallback' in window) {
-    window.cancelIdleCallback(albumIdleCallback);
-  }
   albumObserver?.disconnect();
   document.documentElement.style.scrollBehavior = '';
 });

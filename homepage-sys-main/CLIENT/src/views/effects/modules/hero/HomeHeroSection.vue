@@ -11,13 +11,19 @@
       <template #default>
         <div class="center-avatar-shell">
           <div class="center-avatar" :class="{ 'is-empty': avatarMissing }">
-            <img
-              v-show="!avatarMissing"
-              :src="avatarSrc"
-              alt="Profile"
-              @load="handleAvatarLoad"
-              @error="handleAvatarError"
-            >
+            <picture v-show="!avatarMissing">
+              <source :srcset="avatarWebpSrc" type="image/webp">
+              <img
+                :src="avatarSrc"
+                alt="Profile"
+                width="256"
+                height="256"
+                fetchpriority="high"
+                decoding="async"
+                @load="handleAvatarLoad"
+                @error="handleAvatarError"
+              >
+            </picture>
 
             <div v-if="avatarMissing" class="center-avatar-placeholder">
               <span>Upload Image</span>
@@ -38,7 +44,10 @@
 <script setup>
 import { ref } from 'vue';
 import MouseTrailEffect from '../../../../components/MouseTrailEffect.vue';
-import { profileAvatarSrc as avatarSrc } from '../../content/siteContent';
+import {
+  profileAvatarSrc as avatarSrc,
+  profileAvatarWebpSrc as avatarWebpSrc
+} from '../../content/assetContent';
 
 defineProps({
   fadeStyle: {
@@ -115,10 +124,14 @@ const handleAvatarError = () => {
   pointer-events: none;
 }
 
+.center-avatar picture,
 .center-avatar img {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.center-avatar img {
   object-fit: cover;
   object-position: 60% center;
 }
