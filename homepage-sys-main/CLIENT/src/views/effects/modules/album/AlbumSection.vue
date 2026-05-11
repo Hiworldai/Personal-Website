@@ -266,10 +266,6 @@ const primeMediaForItem = (item) => {
 const shouldAnimateAlbum = () => {
   if (typeof window === 'undefined') return false;
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false;
-  if (window.matchMedia?.('(max-width: 820px)').matches) return false;
-  if (navigator.maxTouchPoints > 0) return false;
-  if (navigator.deviceMemory && navigator.deviceMemory <= 4) return false;
-  if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) return false;
   return true;
 };
 

@@ -13,9 +13,9 @@ export const experienceCopy = {
     linkHref: '#guestbook-card',
     after: '告诉我。'
   },
-  role: '前端开发工程师',
+  role: 'AI全栈开发工程师',
   profileText:
-    '目前在找实习，同时空闲时间补后端知识。运用 AI 我拥有全栈的能力，能独立做出应用级产品雏形。',
+    '空闲时间补后端知识，健身，做短视频。运用 AI 我拥有全栈的能力，能独立做出应用级产品雏形。',
   skillsTitle: '技能 & 工具',
   skillsNote:
     '目前主要使用 Vue、Vite、JavaScript 和 Git，也在持续练习响应式布局、页面质感和 AI 工具协作。',
@@ -28,6 +28,10 @@ export const experienceCopy = {
 export const skillItems = ['HTML', 'CSS', 'JavaScript', 'Vue', 'Vite', 'Git'];
 
 export const recentItems = [
+  {
+  label: '2026.5--2026.11',
+  text: '入职成都觅核科技有限公司，AI全栈开发实习。'
+},
   {
     label: '2026.2--致今',
     text: '认定工作方向,系统学期前端,并加入AI工具向全栈工程师发展,致力做出最酷的AI产品'
