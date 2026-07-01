@@ -8,6 +8,7 @@
           <a href="#about-card">{{ experienceCopy.nav.intro }}</a>
           <a href="#skills-card">{{ experienceCopy.nav.skills }}</a>
           <a href="#contact-card">{{ experienceCopy.nav.contact }}</a>
+          <a class="nav-plate-link" href="https://car.chenkanghong.top" target="_blank" rel="noopener noreferrer">AI识别车牌平台</a>
         </div>
       </nav>
 
@@ -418,6 +419,21 @@ onBeforeUnmount(() => {
   background: rgba(64, 223, 255, 0.12);
   color: #1d4562;
   transform: translateY(-1px);
+}
+
+.nav-links .nav-plate-link {
+  color: #051c2b;
+  background: linear-gradient(135deg, #7cf7ff 0%, #ffd166 100%);
+  box-shadow:
+    0 12px 24px rgba(36, 183, 207, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+.nav-links .nav-plate-link:hover {
+  color: #03131f;
+  background: linear-gradient(135deg, #6ff4ff 0%, #ffe08f 100%);
+  transform: translateY(-2px);
 }
 
 .experience-grid {
@@ -981,6 +997,13 @@ onBeforeUnmount(() => {
     padding: 0;
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.28);
+  }
+
+  .nav-links .nav-plate-link {
+    grid-column: 1 / -1;
+    min-height: 2.55rem;
+    padding: 0 0.8rem;
+    white-space: normal;
   }
 
   .experience-grid {

@@ -18,23 +18,23 @@ export const experienceCopy = {
     '空闲时间补后端知识，健身，做短视频。运用 AI 我拥有全栈的能力，能独立做出应用级产品雏形。',
   skillsTitle: '技能 & 工具',
   skillsNote:
-    '目前主要使用 Vue、Vite、JavaScript 和 Git，也在持续练习响应式布局、页面质感和 AI 工具协作。',
+    '目前主要使用 AI 工具协作，做AI应用开发',
   recentTitle: '近期动态',
   contactTitle: '联系方式',
   contactText:
     '如果你想聊技术、合作，或者一起交流 AI 工具怎么用得更顺手，都可以联系我。'
 };
 
-export const skillItems = ['HTML', 'CSS', 'JavaScript', 'Vue', 'Vite', 'Git'];
+export const skillItems = ['HTML', 'CSS', 'JavaScript', 'TypeScript','Vue', 'Vite','npm','Wepack','Axios','uni-app', 'Git', 'Codex','后端略'];
 
 export const recentItems = [
   {
-  label: '2026.5--2026.11',
-  text: '入职成都觅核科技有限公司，AI全栈开发实习。'
+  label: '2026.4--2026.6',
+  text: '入职成都觅核科技有限公司，AI全栈开发实习，独立负责开发八万人使用的音乐播放器前端，协调后端，参与AIGC音乐MV生成平台的全链路开发。'
 },
   {
-    label: '2026.2--致今',
-    text: '认定工作方向,系统学期前端,并加入AI工具向全栈工程师发展,致力做出最酷的AI产品'
+    label: '2025.12--致今',
+    text: '认定工作方向,系统学期前端,并加入AI工具向全栈工程师发展,没事做点小的AI应用，致力做出最酷的AI产品'
   },
   {
     label: '2025.10',
@@ -42,7 +42,7 @@ export const recentItems = [
   },
   {
     label: '2025.6',
-    text: '跟着大博主创业宠物窝,跑宠物线下市场,一星期获得联系方式300+'
+    text: '跟着大博主创业恒温宠物窝项目,跑宠物线下市场,一星期获得联系方式300+'
   },
   {
     label: '2025.3.15',
