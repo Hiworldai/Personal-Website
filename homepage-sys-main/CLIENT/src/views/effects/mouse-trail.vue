@@ -1,6 +1,10 @@
 <template>
   <main class="mouse-trail-demo">
-    <HomeHeroSection :fade-style="heroFadeStyle" @scroll-hint="scrollToFade" />
+    <HomeHeroSection
+      :fade-style="heroFadeStyle"
+      :scroll-progress="heroProgress"
+      @scroll-hint="scrollToFade"
+    />
     <ExperienceSection />
     <div
       v-if="!shouldLoadAlbum"
@@ -8,7 +12,10 @@
       class="album-load-sentinel"
       aria-hidden="true"
     ></div>
-    <AlbumSection v-if="shouldLoadAlbum" />
+    <AlbumSection
+      v-if="shouldLoadAlbum"
+      :story-progress="albumStoryProgress"
+    />
     <footer class="site-beian-footer" aria-label="网站备案信息">
       <a
         class="site-beian-link"
@@ -40,6 +47,7 @@ const AlbumSection = defineAsyncComponent(() => import('./modules/album/AlbumSec
 const heroProgress = ref(0);
 const shouldLoadAlbum = ref(false);
 const albumSentinelRef = ref(null);
+const albumStoryProgress = ref(0);
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -64,6 +72,37 @@ const updateHeroProgress = () => {
 
   const fadeDistance = Math.max(1, window.innerHeight * 0.85);
   heroProgress.value = clamp(window.scrollY / fadeDistance, 0, 1);
+
+  const albumTrigger = document.querySelector('.album-section') || albumSentinelRef.value;
+  if (albumTrigger) {
+    const sectionTop = albumTrigger.offsetTop;
+    const viewportHeight = window.innerHeight;
+    const preludeDistance = viewportHeight * 0.72;
+    const avatarDistance = viewportHeight * 0.18;
+    const storyStart = sectionTop - preludeDistance;
+    const phaseOneEnd = sectionTop - avatarDistance;
+    const phaseTwoEnd = sectionTop;
+    const currentY = window.scrollY;
+
+    if (currentY <= storyStart) {
+      albumStoryProgress.value = 0;
+      return;
+    }
+
+    if (currentY < phaseOneEnd) {
+      const phaseOneProgress = (currentY - storyStart) / Math.max(phaseOneEnd - storyStart, 1);
+      albumStoryProgress.value = phaseOneProgress * 0.3;
+      return;
+    }
+
+    if (currentY < phaseTwoEnd) {
+      const phaseTwoProgress = (currentY - phaseOneEnd) / Math.max(phaseTwoEnd - phaseOneEnd, 1);
+      albumStoryProgress.value = 0.3 + phaseTwoProgress * 0.35;
+      return;
+    }
+
+    albumStoryProgress.value = 0.65;
+  }
 };
 
 const requestHeroProgressUpdate = () => {
@@ -196,8 +235,27 @@ onBeforeUnmount(() => {
 }
 
 .album-load-sentinel {
-  min-height: 26svh;
-  background: linear-gradient(180deg, #02070c 0%, #dbefff 100%);
+  position: relative;
+  min-height: 42svh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(78, 156, 190, 0.12), transparent 30%),
+    radial-gradient(circle at 50% 28%, rgba(44, 110, 145, 0.1), transparent 40%),
+    linear-gradient(
+      180deg,
+      rgba(28, 82, 114, 0.12) 0%,
+      rgba(20, 64, 94, 0.22) 14%,
+      rgba(14, 48, 74, 0.38) 28%,
+      rgba(10, 36, 58, 0.56) 42%,
+      rgba(7, 26, 42, 0.72) 56%,
+      rgba(4, 18, 30, 0.86) 70%,
+      rgba(3, 11, 19, 0.94) 84%,
+      #02070c 100%
+    );
+}
+
+.album-load-sentinel::before {
+  content: none;
 }
 
 .site-beian-footer {
@@ -207,8 +265,8 @@ onBeforeUnmount(() => {
   gap: 0.75rem 1.1rem;
   flex-wrap: wrap;
   padding: 1.2rem 1rem 1.4rem;
-  color: rgba(25, 58, 83, 0.76);
-  background: linear-gradient(180deg, #eef8fb 0%, #e8f6ff 100%);
+  color: rgba(219, 248, 255, 0.58);
+  background: linear-gradient(180deg, #02070c 0%, #010305 100%);
   font-size: 0.86rem;
 }
 
@@ -222,7 +280,7 @@ onBeforeUnmount(() => {
 }
 
 .site-beian-link:hover {
-  color: #0a6178;
+  color: #9ff3ff;
   opacity: 0.88;
 }
 

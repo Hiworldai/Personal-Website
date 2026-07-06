@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section id="experience-section" class="experience-section" aria-labelledby="experience-title">
     <div class="experience-shell">
       <nav class="experience-nav" aria-label="Profile sections">
@@ -13,7 +13,14 @@
       </nav>
 
       <div class="experience-grid">
-        <article id="experience-title" class="experience-card hero-card">
+        <article 
+          id="experience-title" 
+          class="experience-card hero-card animate-on-scroll" 
+          data-animation-delay="0ms"
+          @mousemove="handleCardMouseMove"
+          @mouseleave="handleCardMouseLeave"
+        >
+          <span class="card-glow" :style="heroCardGlow"></span>
           <h2><span>To</span>{{ experienceCopy.brand }}</h2>
           <p class="hero-summary">
             {{ experienceCopy.heroSummary.before }}
@@ -25,19 +32,34 @@
           <span class="blue-dot" aria-hidden="true"></span>
         </article>
 
-        <article id="skills-card" class="experience-card skills-card">
+        <article 
+          id="skills-card" 
+          class="experience-card skills-card animate-on-scroll" 
+          data-animation-delay="120ms"
+          @mousemove="handleCardMouseMove"
+          @mouseleave="handleCardMouseLeave"
+        >
+          <span class="card-glow" :style="skillsCardGlow"></span>
           <h3>{{ experienceCopy.skillsTitle }}</h3>
           <p class="skills-note">{{ experienceCopy.skillsNote }}</p>
           <div class="skill-list">
             <span
               v-for="(skill, index) in skillItems"
               :key="skill"
-              :style="{ '--float-delay': `${index * 0.45}s` }"
+              :style="{ '--float-delay': `${index * 0.15}s` }"
+              class="skill-tag"
             >{{ skill }}</span>
           </div>
         </article>
 
-        <article id="about-card" class="experience-card profile-card">
+        <article 
+          id="about-card" 
+          class="experience-card profile-card animate-on-scroll" 
+          data-animation-delay="240ms"
+          @mousemove="handleCardMouseMove"
+          @mouseleave="handleCardMouseLeave"
+        >
+          <span class="card-glow" :style="aboutCardGlow"></span>
           <div class="profile-picture-frame">
             <picture>
               <source :srcset="profileAvatarWebpSrc" type="image/webp">
@@ -57,7 +79,13 @@
           </div>
         </article>
 
-        <article class="experience-card timeline-card">
+        <article 
+          class="experience-card timeline-card animate-on-scroll" 
+          data-animation-delay="360ms"
+          @mousemove="handleCardMouseMove"
+          @mouseleave="handleCardMouseLeave"
+        >
+          <span class="card-glow" :style="timelineCardGlow"></span>
           <h3>{{ experienceCopy.recentTitle }}</h3>
           <div class="recent-list-shell">
             <ul ref="recentListRef" class="recent-list" aria-label="近期动态" @scroll.passive="handleRecentScroll">
@@ -77,7 +105,14 @@
           </div>
         </article>
 
-        <article id="contact-card" class="experience-card contact-card">
+        <article 
+          id="contact-card" 
+          class="experience-card contact-card animate-on-scroll" 
+          data-animation-delay="480ms"
+          @mousemove="handleCardMouseMove"
+          @mouseleave="handleCardMouseLeave"
+        >
+          <span class="card-glow" :style="contactCardGlow"></span>
           <h3>{{ experienceCopy.contactTitle }}</h3>
           <p class="contact-text">{{ experienceCopy.contactText }}</p>
           <div class="contact-links" aria-label="Contact links">
@@ -160,6 +195,7 @@
         </div>
       </div>
     </div>
+    <div class="experience-section-bottom-haze" aria-hidden="true"></div>
   </section>
 </template>
 
@@ -189,6 +225,51 @@ const recentScrollbar = ref({
   thumbHeight: 0,
   thumbOffset: 0
 });
+
+const heroCardGlow = ref({});
+const skillsCardGlow = ref({});
+const aboutCardGlow = ref({});
+const timelineCardGlow = ref({});
+const contactCardGlow = ref({});
+
+const cardGlowStates = {
+  'experience-title': heroCardGlow,
+  'skills-card': skillsCardGlow,
+  'about-card': aboutCardGlow,
+  'timeline-card': timelineCardGlow,
+  'contact-card': contactCardGlow
+};
+
+const handleCardMouseMove = (event) => {
+  const card = event.currentTarget;
+  const rect = card.getBoundingClientRect();
+  const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+  const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+  const intensity = Math.sqrt(x * x + y * y);
+  const normalizedIntensity = Math.min(intensity, 1);
+
+  const glowStyle = {
+    opacity: 0.6 + normalizedIntensity * 0.4,
+    transform: `translate(${x * 30}px, ${y * 30}px)`,
+    background: `radial-gradient(circle at 50% 50%, rgba(64, 223, 255, ${0.12 + normalizedIntensity * 0.08}) 0%, rgba(64, 223, 255, 0) 60%)`
+  };
+
+  const cardId = card.id || card.classList.contains('timeline-card') ? 'timeline-card' : null;
+  if (cardId && cardGlowStates[cardId]) {
+    cardGlowStates[cardId].value = glowStyle;
+  }
+};
+
+const handleCardMouseLeave = (event) => {
+  const card = event.currentTarget;
+  const cardId = card.id || card.classList.contains('timeline-card') ? 'timeline-card' : null;
+  if (cardId && cardGlowStates[cardId]) {
+    cardGlowStates[cardId].value = {
+      opacity: 0,
+      transform: 'translate(0, 0)'
+    };
+  }
+};
 
 const recentScrollbarThumbStyle = computed(() => ({
   height: `${recentScrollbar.value.thumbHeight}px`,
@@ -299,42 +380,77 @@ const handleWindowResize = () => {
   updateRecentScrollbar();
 };
 
+let animationObserver = null;
+
+const initScrollAnimations = () => {
+  const elements = document.querySelectorAll('.animate-on-scroll');
+  if (!elements.length || !('IntersectionObserver' in window)) return;
+
+  animationObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const delay = entry.target.getAttribute('data-animation-delay') || '0ms';
+        entry.target.style.animationDelay = delay;
+        entry.target.classList.add('animate-in');
+        animationObserver?.unobserve(entry.target);
+      }
+    });
+  }, {
+    rootMargin: '0px 0px -12% 0px',
+    threshold: 0.1
+  });
+
+  elements.forEach((el) => animationObserver?.observe(el));
+};
+
 onMounted(() => {
   updateRecentScrollbar();
   window.addEventListener('resize', handleWindowResize);
+  initScrollAnimations();
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleWindowResize);
   clearTimeout(recentScrollbarTimer);
+  animationObserver?.disconnect();
 });
 </script>
 
 <style scoped>
 .experience-section {
   --accent-blue: #40dfff;
-  --accent-cream: #f7eead;
+  --accent-ice: #dff9ff;
+  --accent-lime: #ecf78e;
+  --ink-strong: #12324a;
+  --ink-soft: rgba(18, 50, 74, 0.72);
+  --radius-card: 14px;
+  --radius-button: 999px;
   position: relative;
   min-height: 100svh;
-  padding: 5rem 1.25rem 4rem;
+  padding: 6rem 1.25rem 4.8rem;
   overflow-x: hidden;
   overflow-y: visible;
-  color: #193a53;
+  color: var(--ink-strong);
+  font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background:
-    radial-gradient(circle at 50% -10%, rgba(255, 242, 174, 0.56), transparent 28%),
-    radial-gradient(circle at 84% 14%, rgba(64, 223, 255, 0.24), transparent 22%),
-    radial-gradient(circle at 18% 20%, rgba(255, 208, 137, 0.22), transparent 20%),
+    radial-gradient(circle at 16% 18%, rgba(64, 223, 255, 0.18), transparent 25%),
+    radial-gradient(circle at 86% 12%, rgba(236, 247, 142, 0.16), transparent 22%),
+    radial-gradient(circle at 50% 48%, rgba(223, 249, 255, 0.55), transparent 36%),
+    radial-gradient(circle at 50% 92%, rgba(18, 62, 90, 0.5), transparent 38%),
     linear-gradient(
       180deg,
       rgba(2, 7, 12, 0) 0%,
-      rgba(4, 9, 15, 0.92) 9%,
-      rgba(17, 34, 54, 0.62) 17%,
-      rgba(72, 105, 140, 0.28) 24%,
-      rgba(247, 238, 173, 0.28) 36%,
-      rgba(223, 245, 255, 0.94) 58%,
-      rgba(236, 249, 255, 0.98) 100%
+      rgba(3, 10, 18, 0.92) 8%,
+      rgba(10, 28, 44, 0.68) 18%,
+      rgba(45, 92, 120, 0.32) 31%,
+      rgba(220, 246, 252, 0.96) 54%,
+      rgba(240, 250, 253, 0.98) 72%,
+      rgba(210, 236, 246, 0.92) 82%,
+      rgba(158, 212, 230, 0.7) 90%,
+      rgba(90, 168, 200, 0.4) 96%,
+      rgba(30, 88, 120, 0.2) 100%
     ),
-    repeating-linear-gradient(90deg, rgba(24, 70, 101, 0.05) 0 1px, transparent 1px 74px);
+    repeating-linear-gradient(90deg, rgba(24, 70, 101, 0.03) 0 1px, transparent 1px 86px);
 }
 
 .experience-section::before {
@@ -353,17 +469,40 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0 auto auto 0;
   width: 100%;
-  height: 16rem;
+  height: 18rem;
   content: '';
   background:
-    linear-gradient(180deg, rgba(2, 7, 12, 0.88) 0%, rgba(6, 14, 24, 0.58) 26%, rgba(17, 36, 57, 0.18) 62%, transparent 100%);
+    linear-gradient(180deg, rgba(2, 7, 12, 0.94) 0%, rgba(4, 12, 22, 0.68) 34%, rgba(19, 42, 62, 0.2) 68%, transparent 100%);
   pointer-events: none;
+}
+
+.experience-section-bottom-haze {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40vh;
+  min-height: 17rem;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(14, 52, 78, 0.62) 0%, rgba(9, 34, 52, 0.44) 24%, rgba(5, 22, 36, 0.24) 50%, transparent 76%),
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(16, 58, 84, 0.14) 22%,
+      rgba(10, 40, 62, 0.32) 46%,
+      rgba(6, 24, 40, 0.58) 68%,
+      rgba(3, 14, 26, 0.78) 84%,
+      rgba(2, 8, 14, 0.94) 100%
+    );
+  z-index: 2;
+  filter: blur(5px);
 }
 
 .experience-shell {
   position: relative;
   z-index: 1;
-  width: min(100%, 1120px);
+  width: min(100%, 1160px);
   margin: 0 auto;
 }
 
@@ -371,18 +510,18 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 4.5rem;
-  margin-bottom: 1.7rem;
-  padding: 0.95rem 1.6rem;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 8px;
+  min-height: 4.25rem;
+  margin-bottom: 1.45rem;
+  padding: 0.82rem 1.15rem 0.82rem 1.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-card);
   background:
-    linear-gradient(135deg, rgba(255, 248, 238, 0.74), rgba(237, 248, 255, 0.54)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08));
+    linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(226, 246, 252, 0.48)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.08));
   box-shadow:
-    0 24px 48px rgba(82, 122, 150, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.62);
-  backdrop-filter: blur(18px);
+    0 16px 40px rgba(7, 24, 38, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(22px) saturate(1.12);
 }
 
 .brand-mark,
@@ -392,8 +531,9 @@ onBeforeUnmount(() => {
 }
 
 .brand-mark {
-  font-size: 1.24rem;
+  font-size: 1.08rem;
   font-weight: 900;
+  letter-spacing: 0.02em;
 }
 
 .brand-mark span,
@@ -404,13 +544,13 @@ onBeforeUnmount(() => {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 0.88rem;
+  gap: 0.35rem;
+  font-size: 0.82rem;
   font-weight: 800;
 }
 
 .nav-links a {
-  padding: 0.58rem 0.9rem;
+  padding: 0.58rem 0.78rem;
   border-radius: 999px;
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
@@ -422,10 +562,11 @@ onBeforeUnmount(() => {
 }
 
 .nav-links .nav-plate-link {
-  color: #051c2b;
-  background: linear-gradient(135deg, #7cf7ff 0%, #ffd166 100%);
+  margin-left: 0.28rem;
+  color: #031827;
+  background: linear-gradient(135deg, #92f8ff 0%, #e9f585 100%);
   box-shadow:
-    0 12px 24px rgba(36, 183, 207, 0.22),
+    0 12px 30px rgba(36, 183, 207, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
   white-space: nowrap;
 }
@@ -442,7 +583,7 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-rows: auto auto auto;
   grid-auto-rows: minmax(0, auto);
-  gap: 1.35rem;
+  gap: 1rem;
   align-items: stretch;
 }
 
@@ -462,16 +603,26 @@ onBeforeUnmount(() => {
   position: relative;
   overflow: hidden;
   min-height: 7rem;
-  padding: 1.3rem;
-  border: 1px solid rgba(255, 255, 255, 0.52);
-  border-radius: 8px;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--radius-card);
   background:
-    linear-gradient(135deg, rgba(255, 249, 242, 0.78), rgba(237, 248, 255, 0.58)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(229, 246, 252, 0.62)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
   box-shadow:
-    0 22px 48px rgba(84, 118, 143, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(18px);
+    0 12px 32px rgba(48, 88, 116, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(22px) saturate(1.12);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.experience-card:hover {
+  border-color: rgba(177, 244, 255, 0.5);
+  box-shadow:
+    0 20px 48px rgba(48, 88, 116, 0.12),
+    0 0 24px rgba(64, 223, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  transform: translateY(-3px);
 }
 
 .experience-card::after {
@@ -482,6 +633,16 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
+.card-glow {
+  position: absolute;
+  inset: -50%;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
 .experience-card h2,
 .experience-card h3,
 .experience-card p {
@@ -490,17 +651,27 @@ onBeforeUnmount(() => {
   margin: 0;
 }
 
+.skill-tag {
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.skill-tag:hover {
+  transform: translateY(-2px) scale(1.05);
+  background-color: rgba(64, 223, 255, 0.2);
+  box-shadow: 0 6px 20px rgba(64, 223, 255, 0.15);
+}
+
 .hero-card {
   grid-column: 1 / span 7;
   grid-row: 1;
   display: grid;
   align-content: start;
   gap: 0.8rem;
-  min-height: 8.6rem;
+  min-height: 9.4rem;
   padding-right: 5.6rem;
   background:
-    linear-gradient(135deg, rgba(255, 248, 230, 0.84), rgba(231, 247, 255, 0.62)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0));
+    linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(226, 246, 252, 0.62)),
+    radial-gradient(circle at 88% 18%, rgba(236, 247, 142, 0.34), transparent 20%);
 }
 
 .hero-card::before {
@@ -510,14 +681,14 @@ onBeforeUnmount(() => {
   width: 8.8rem;
   height: 8.8rem;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 183, 122, 0.62) 0%, rgba(255, 217, 156, 0.26) 45%, rgba(255, 255, 255, 0) 72%);
+  background: radial-gradient(circle, rgba(236, 247, 142, 0.72) 0%, rgba(142, 238, 255, 0.24) 48%, rgba(255, 255, 255, 0) 72%);
   content: '';
   filter: blur(6px);
 }
 
 .hero-card h2 {
-  color: #1e435f;
-  font-size: clamp(1.95rem, 3vw, 2.5rem);
+  color: #173750;
+  font-size: clamp(2rem, 3vw, 2.68rem);
   font-weight: 900;
   line-height: 1.02;
 }
@@ -528,10 +699,10 @@ onBeforeUnmount(() => {
 
 .hero-summary {
   max-width: 35rem;
-  color: rgba(35, 67, 92, 0.86);
-  font-size: 0.96rem;
+  color: var(--ink-soft);
+  font-size: 0.94rem;
   font-weight: 700;
-  line-height: 1.68;
+  line-height: 1.72;
 }
 
 .hero-summary-link {
@@ -548,11 +719,13 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 1.2rem;
   right: 1.35rem;
-  width: 2.8rem;
-  height: 2.8rem;
+  width: 2.9rem;
+  height: 2.9rem;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fffbe0, #ffd48f 36%, #ffb37a 68%, #ff8f6a 100%);
-  box-shadow: 0 0 20px rgba(255, 183, 122, 0.36);
+  background: radial-gradient(circle at 35% 30%, #fff, #ecf78e 36%, #7feeff 72%, #55d8ff 100%);
+  box-shadow:
+    0 0 24px rgba(64, 223, 255, 0.28),
+    0 0 36px rgba(236, 247, 142, 0.22);
 }
 
 .skills-card {
@@ -561,13 +734,13 @@ onBeforeUnmount(() => {
   display: grid;
   align-content: start;
   gap: 0.8rem;
-  min-height: 8.6rem;
+  min-height: 9.4rem;
 }
 
 .skills-card h3,
 .timeline-card h3,
 .contact-card h3 {
-  color: #234560;
+  color: #173750;
   font-size: 1.18rem;
   font-weight: 900;
 }
@@ -576,7 +749,7 @@ onBeforeUnmount(() => {
 .contact-text,
 .recent-item p,
 .profile-text {
-  color: rgba(35, 67, 92, 0.82);
+  color: var(--ink-soft);
   font-size: 0.92rem;
   font-weight: 700;
   line-height: 1.62;
@@ -585,22 +758,25 @@ onBeforeUnmount(() => {
 .skill-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.7rem;
+  gap: 0.58rem;
 }
 
 .skill-list span {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.4rem;
-  padding: 0 0.95rem;
-  border: 1px solid rgba(92, 150, 184, 0.16);
+  min-height: 2.18rem;
+  padding: 0 0.86rem;
+  border: 1px solid rgba(112, 178, 207, 0.16);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.44);
-  color: #25516d;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(238, 249, 252, 0.52));
+  color: #1d4c68;
   font-size: 0.82rem;
   font-weight: 800;
-  box-shadow: 0 10px 20px rgba(84, 118, 143, 0.08);
+  box-shadow:
+    0 10px 22px rgba(53, 96, 125, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
   animation: skill-float 4.8s ease-in-out infinite;
   animation-delay: var(--float-delay, 0s);
   backface-visibility: hidden;
@@ -615,17 +791,20 @@ onBeforeUnmount(() => {
   display: grid;
   align-content: start;
   gap: 1rem;
-  min-height: 25.4rem;
+  min-height: 25.6rem;
 }
 
 .profile-picture-frame {
   width: 100%;
   aspect-ratio: 1 / 1.02;
-  padding: 0.4rem;
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(255, 248, 236, 0.84), rgba(234, 247, 255, 0.72));
-  box-shadow: 0 20px 36px rgba(85, 126, 153, 0.12);
+  padding: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(226, 247, 253, 0.62));
+  box-shadow:
+    0 16px 34px rgba(51, 92, 121, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
   transform: rotate(-1.6deg);
 }
 
@@ -651,7 +830,7 @@ onBeforeUnmount(() => {
 }
 
 .profile-role {
-  color: #1f4863;
+  color: #173750;
   font-size: 1.06rem;
   font-weight: 900;
 }
@@ -662,17 +841,30 @@ onBeforeUnmount(() => {
   display: grid;
   align-content: start;
   gap: 1rem;
-  min-height: 25.4rem;
+  min-height: 25.6rem;
 }
 
 .recent-list-shell {
   position: relative;
 }
 
+.recent-list-shell::before {
+  position: absolute;
+  top: 0;
+  left: 0.77rem;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(64, 223, 255, 0.4), rgba(64, 223, 255, 0.12) 60%, rgba(64, 223, 255, 0));
+  content: '';
+  pointer-events: none;
+}
+
 .recent-list {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.95rem;
+  gap: 0.78rem;
   max-height: 24.7rem;
   margin: 0;
   padding: 0 0.2rem 0 0;
@@ -684,17 +876,34 @@ onBeforeUnmount(() => {
 }
 
 .recent-item {
+  position: relative;
   display: grid;
   gap: 0.35rem;
-  min-height: 7.6rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.46);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.36);
+  min-height: 7.25rem;
+  padding: 0.84rem 0.92rem 0.84rem 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.65), rgba(231, 247, 252, 0.48));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 8px 18px rgba(54, 94, 121, 0.06);
+}
+
+.recent-item::before {
+  position: absolute;
+  top: 0.84rem;
+  left: 0.55rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-blue), #8cf0ff);
+  box-shadow: 0 0 8px rgba(64, 223, 255, 0.4);
+  content: '';
 }
 
 .recent-year {
-  color: #3284a5;
+  color: #1584a4;
   font-size: 0.74rem;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -747,7 +956,7 @@ onBeforeUnmount(() => {
   display: grid;
   align-content: start;
   gap: 1rem;
-  min-height: 25.4rem;
+  min-height: 25.6rem;
 }
 
 .contact-links {
@@ -763,13 +972,16 @@ onBeforeUnmount(() => {
   gap: 0.15rem;
   align-items: start;
   min-height: 4rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid rgba(96, 154, 187, 0.18);
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.58), rgba(232, 245, 255, 0.6));
-  color: #224966;
+  padding: 0.92rem 1rem;
+  border: 1px solid rgba(112, 178, 207, 0.15);
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(232, 248, 253, 0.58));
+  color: #173f5b;
   text-decoration: none;
-  box-shadow: 0 12px 24px rgba(83, 123, 151, 0.1);
+  box-shadow:
+    0 8px 20px rgba(52, 91, 119, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 .contact-link:hover {
@@ -792,15 +1004,15 @@ onBeforeUnmount(() => {
 
 .guestbook-section {
   position: relative;
-  margin-top: 4.2rem;
+  margin-top: 4rem;
   margin-bottom: 2.1rem;
 }
 
 .guestbook-card {
   display: grid;
   grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
-  gap: 1rem;
-  padding: 1rem 1.05rem;
+  gap: 1.15rem;
+  padding: 1.15rem;
   align-items: start;
 }
 
@@ -817,16 +1029,16 @@ onBeforeUnmount(() => {
   aspect-ratio: 1 / 1;
   margin-top: 0.15rem;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.58);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.5);
   box-shadow:
-    0 16px 30px rgba(84, 118, 143, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    0 12px 26px rgba(52, 91, 119, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .guestbook-copy h2 {
-  color: #20445f;
+  color: #173750;
   font-size: clamp(1.28rem, 2.2vw, 1.68rem);
   line-height: 1.06;
 }
@@ -865,9 +1077,9 @@ onBeforeUnmount(() => {
   max-width: 100%;
   box-sizing: border-box;
   padding: 0.78rem 0.95rem;
-  border: 1px solid rgba(96, 154, 187, 0.18);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(112, 178, 207, 0.18);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.68);
   color: #224966;
   font: inherit;
   outline: none;
@@ -897,12 +1109,14 @@ onBeforeUnmount(() => {
   padding: 0 1rem;
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(135deg, #40dfff, #8be7ff 52%, #f7eead 100%);
+  background: linear-gradient(135deg, #40dfff, #92f8ff 52%, #ecf78e 100%);
   color: #16384f;
   font: inherit;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 14px 28px rgba(79, 149, 187, 0.18);
+  box-shadow:
+    0 14px 30px rgba(64, 171, 207, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68);
 }
 
 .guestbook-submit:hover {
@@ -1106,6 +1320,26 @@ onBeforeUnmount(() => {
 
   .guestbook-section {
     margin-top: 0.95rem;
+  }
+}
+
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+.animate-on-scroll.animate-in {
+  animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>
