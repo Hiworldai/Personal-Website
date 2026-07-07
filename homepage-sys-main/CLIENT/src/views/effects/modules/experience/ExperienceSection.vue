@@ -1,205 +1,175 @@
 <template>
-  <section id="experience-section" class="experience-section" aria-labelledby="experience-title">
-    <div class="experience-shell">
-      <nav class="experience-nav" aria-label="Profile sections">
-        <a href="#experience-title" class="brand-mark"><span>Bejoy</span></a>
-        <div class="nav-links">
-          <a href="#experience-title">{{ experienceCopy.nav.home }}</a>
-          <a href="#about-panel">{{ experienceCopy.nav.intro }}</a>
-          <a href="#skills-panel">{{ experienceCopy.nav.skills }}</a>
-          <a href="#contact-panel">{{ experienceCopy.nav.contact }}</a>
-          <a class="nav-plate-link" href="https://car.chenkanghong.top" target="_blank" rel="noopener noreferrer">AI识别车牌项目</a>
+  <section id="experience-section" ref="sectionRef" class="journey-section" aria-labelledby="experience-title">
+    <nav class="journey-nav" aria-label="Train journey navigation">
+      <a href="#experience-title" class="journey-brand">Train Journey</a>
+      <div class="journey-nav-links">
+        <a v-for="item in journeyNavItems" :key="item.href" :href="item.href">
+          {{ item.label }}
+        </a>
+      </div>
+    </nav>
+
+    <div ref="runwayRef" class="journey-runway">
+      <div class="journey-stage">
+        <div class="journey-progress" aria-hidden="true">
+          <span class="journey-progress-track"></span>
+          <span class="journey-progress-fill" :style="journeyProgressStyle"></span>
         </div>
-      </nav>
 
-      <div class="experience-stage">
-        <header id="experience-title" class="intro-panel animate-on-scroll" data-animation-delay="0ms" data-enter="up">
-          <div class="intro-copy">
-            <p class="section-kicker">Profile</p>
-            <h2>{{ experienceCopy.brand }}</h2>
-            <p class="hero-summary">
-              {{ experienceCopy.heroSummary.before }}
-              <a class="hero-summary-link" :href="experienceCopy.heroSummary.linkHref">
-                {{ experienceCopy.heroSummary.linkText }}
-              </a>
-              {{ experienceCopy.heroSummary.after }}
-            </p>
+        <div class="scene-stack" aria-hidden="true">
+          <div
+            v-for="(scene, index) in journeyScenes"
+            :key="scene.key"
+            class="scene-layer"
+            :class="`scene-layer-${index + 1}`"
+            :style="getSceneStyle(index)"
+          >
+            <div class="scene-image" :style="{ backgroundImage: `url(${scene.image})` }"></div>
           </div>
 
-          <div class="intro-side">
-            <div class="breathing-loader" aria-hidden="true">
-              <span class="loader-core"></span>
-              <span class="loader-ring loader-ring-a"></span>
-              <span class="loader-ring loader-ring-b"></span>
-              <span class="loader-line"></span>
-              <span class="loader-label">CHEN KANGHONG</span>
+          <div class="scene-night-shade" :style="nightShadeStyle"></div>
+          <div class="scene-warmth" :style="warmthStyle"></div>
+          <div class="scene-lift" :style="skyLiftStyle"></div>
+          <div class="scene-fog"></div>
+        </div>
+
+        <div class="journey-overlay">
+          <header
+            :id="journeyPanels[0].id"
+            class="journey-panel journey-hero-panel"
+            :style="getPanelStyle(0, 0.22, -42, 18, true)"
+          >
+            <p class="journey-kicker">{{ journeyPanels[0].kicker }}</p>
+            <h2>{{ journeyPanels[0].title }}</h2>
+            <p class="journey-summary">{{ journeyPanels[0].body }}</p>
+          </header>
+
+          <section
+            :id="journeyPanels[1].id"
+            class="journey-panel journey-story-panel"
+            :style="getPanelStyle(0.16, 0.42, -34, 22)"
+          >
+            <p class="journey-kicker">{{ journeyPanels[1].kicker }}</p>
+            <h3>{{ journeyPanels[1].title }}</h3>
+            <p>{{ journeyPanels[1].body }}</p>
+          </section>
+
+          <section
+            :id="journeyPanels[2].id"
+            class="journey-panel journey-day-panel"
+            :style="getPanelStyle(0.36, 0.68, 34, 22)"
+          >
+            <div class="journey-day-copy">
+              <p class="journey-kicker">{{ journeyPanels[2].kicker }}</p>
+              <h3>{{ journeyPanels[2].title }}</h3>
+              <p>{{ journeyPanels[2].body }}</p>
             </div>
 
-            <div class="intro-metrics" aria-label="Profile highlights">
-              <div v-for="item in experienceStats" :key="item.label" class="intro-metric">
-                <span class="intro-metric-value">{{ item.value }}</span>
-                <span class="intro-metric-label">{{ item.label }}</span>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <section id="about-panel" class="profile-panel animate-on-scroll" data-animation-delay="120ms" data-enter="left">
-          <div class="profile-visual">
-            <div class="profile-picture-frame">
-              <picture>
-                <source :srcset="profileAvatarWebpSrc" type="image/webp">
-                <img
-                  :src="profileAvatarSrc"
-                  alt="Profile avatar"
-                  width="471"
-                  height="480"
-                  loading="lazy"
-                  decoding="async"
-                >
-              </picture>
-            </div>
-          </div>
-
-          <div class="profile-copy">
-            <p class="section-kicker">About</p>
-            <p class="profile-role">{{ experienceCopy.role }}</p>
-            <p class="profile-text">{{ experienceCopy.profileText }}</p>
-          </div>
-        </section>
-
-        <section id="skills-panel" class="skills-panel animate-on-scroll" data-animation-delay="180ms" data-enter="up">
-          <div class="panel-heading">
-            <p class="section-kicker">Toolkit</p>
-            <h3>{{ experienceCopy.skillsTitle }}</h3>
-            <p class="skills-note">{{ experienceCopy.skillsNote }}</p>
-          </div>
-
-          <div class="skill-marquee-shell">
-            <div class="skill-track skill-track-forward">
-              <span v-for="skill in marqueeSkills" :key="`forward-${skill}`" class="skill-chip">{{ skill }}</span>
-            </div>
-            <div class="skill-track skill-track-reverse">
-              <span v-for="skill in marqueeSkillsReverse" :key="`reverse-${skill}`" class="skill-chip">{{ skill }}</span>
-            </div>
-          </div>
-        </section>
-
-        <div class="detail-grid">
-          <section class="timeline-panel animate-on-scroll" data-animation-delay="220ms" data-enter="left">
-            <div class="panel-heading">
-              <p class="section-kicker">Recent Notes</p>
-              <h3>{{ experienceCopy.recentTitle }}</h3>
-            </div>
-
-            <div class="recent-list-shell">
-              <ul ref="recentListRef" class="recent-list" aria-label="杩戞湡鍔ㄦ€?" @scroll.passive="handleRecentScroll">
-                <li v-for="item in recentItems" :key="item.label + item.text" class="recent-item">
-                  <span class="recent-year">{{ item.label }}</span>
-                  <p>{{ item.text }}</p>
-                </li>
-              </ul>
-              <div
-                v-if="recentScrollbar.enabled"
-                class="recent-scrollbar"
-                :class="{ 'is-visible': recentScrollbarVisible }"
-                aria-hidden="true"
-              >
-                <span class="recent-scrollbar-thumb" :style="recentScrollbarThumbStyle"></span>
-              </div>
+            <div class="journey-card-grid">
+              <article v-for="card in journeyCards" :key="card.index" class="journey-card">
+                <span class="journey-card-index">{{ card.index }}</span>
+                <h4>{{ card.title }}</h4>
+                <p>{{ card.description }}</p>
+              </article>
             </div>
           </section>
 
-          <section id="contact-panel" class="contact-panel animate-on-scroll" data-animation-delay="280ms" data-enter="right">
-            <div class="panel-heading">
-              <p class="section-kicker">Contact</p>
-              <h3>{{ experienceCopy.contactTitle }}</h3>
-            </div>
+          <section
+            :id="journeyPanels[3].id"
+            class="journey-panel journey-sunset-panel"
+            :style="getPanelStyle(0.62, 0.88, 0, 24)"
+          >
+            <p class="journey-kicker">{{ journeyPanels[3].kicker }}</p>
+            <h3>{{ journeyPanels[3].title }}</h3>
+            <p>{{ journeyPanels[3].body }}</p>
+          </section>
 
-            <p class="contact-text">{{ experienceCopy.contactText }}</p>
-
-            <div class="contact-links" aria-label="Contact links">
-              <component
-                :is="item.href ? 'a' : 'div'"
-                v-for="item in contactLinkItems"
-                :key="item.label"
-                class="contact-link"
-                :href="item.href || undefined"
-                :target="getContactTarget(item.href)"
-                :rel="getContactRel(item.href)"
-                :aria-label="`${item.label}锛?{item.value || item.href}`"
-              >
-                <strong>{{ item.label }}</strong>
-                <small>{{ item.value || item.href }}</small>
-              </component>
-            </div>
+          <section
+            :id="journeyPanels[4].id"
+            class="journey-panel journey-outro-panel"
+            :style="getPanelStyle(0.8, 1, 0, 28)"
+          >
+            <p class="journey-kicker">{{ journeyPanels[4].kicker }}</p>
+            <h3>{{ journeyPanels[4].title }}</h3>
+            <p>{{ journeyPanels[4].body }}</p>
           </section>
         </div>
-
-        <section id="guestbook-card" class="guestbook-panel animate-on-scroll" data-animation-delay="320ms" data-enter="up" aria-labelledby="guestbook-title">
-          <div class="guestbook-copy">
-            <p class="section-kicker">Guestbook</p>
-            <h2 id="guestbook-title">{{ guestbookCopy.title }}</h2>
-            <p>{{ guestbookCopy.description }}</p>
-            <div class="guestbook-image">
-              <picture>
-                <source srcset="/gallery/display/guestbook-photo.webp" type="image/webp">
-                <img
-                  src="/gallery/display/guestbook-photo.jpg"
-                  alt="Guestbook image"
-                  width="248"
-                  height="250"
-                  loading="lazy"
-                  decoding="async"
-                >
-              </picture>
-            </div>
-          </div>
-
-          <form class="guestbook-form" @submit.prevent="submitGuestbook">
-            <label class="guestbook-field">
-              <span>{{ guestbookCopy.fields.email }}</span>
-              <input
-                v-model.trim="guestbookForm.email"
-                type="email"
-                :placeholder="guestbookCopy.placeholders.email"
-                required
-              >
-            </label>
-
-            <label class="guestbook-field guestbook-field-message">
-              <span>{{ guestbookCopy.fields.message }}</span>
-              <textarea
-                v-model.trim="guestbookForm.message"
-                :placeholder="guestbookCopy.placeholders.message"
-                :maxlength="guestbookCopy.messageMaxLength"
-                rows="6"
-                required
-              ></textarea>
-            </label>
-
-            <div class="guestbook-actions">
-              <button class="guestbook-submit" type="submit" :disabled="isSubmitting">
-                {{ isSubmitting ? '鍙戦€佷腑...' : guestbookCopy.submit }}
-              </button>
-              <p v-if="guestbookCopy.note" class="guestbook-note">{{ guestbookCopy.note }}</p>
-              <p
-                v-if="guestbookStatus"
-                class="guestbook-status"
-                :class="{
-                  'is-success': guestbookStatusType === 'success',
-                  'is-error': guestbookStatusType === 'error'
-                }"
-              >
-                {{ guestbookStatus }}
-              </p>
-            </div>
-          </form>
-        </section>
       </div>
     </div>
 
-    <div class="experience-section-bottom-haze" aria-hidden="true"></div>
+    <div class="journey-dock">
+      <section class="journey-contact-panel">
+        <div class="journey-contact-copy">
+          <p class="journey-kicker">Contact</p>
+          <h3>继续这一段旅程</h3>
+          <p>如果你想交流网页叙事、前端实现、AI 应用，或者只是想聊聊这段火车旅程的视觉氛围，都可以从这里找到我。</p>
+        </div>
+
+        <div class="journey-contact-links" aria-label="Contact links">
+          <component
+            :is="item.href ? 'a' : 'div'"
+            v-for="item in contactLinkItems"
+            :key="item.label"
+            class="journey-contact-link"
+            :href="item.href || undefined"
+            :target="getContactTarget(item.href)"
+            :rel="getContactRel(item.href)"
+            :aria-label="`${item.label}: ${item.value || item.href}`"
+          >
+            <strong>{{ item.label }}</strong>
+            <small>{{ item.value || item.href }}</small>
+          </component>
+        </div>
+      </section>
+
+      <section id="guestbook-card" class="journey-guestbook-panel" aria-labelledby="guestbook-title">
+        <div class="journey-guestbook-copy">
+          <p class="journey-kicker">Guestbook</p>
+          <h3 id="guestbook-title">{{ guestbookCopy.title }}</h3>
+          <p>{{ guestbookCopy.description }}</p>
+        </div>
+
+        <form class="journey-guestbook-form" @submit.prevent="submitGuestbook">
+          <label class="journey-field">
+            <span>{{ guestbookCopy.fields.email }}</span>
+            <input
+              v-model.trim="guestbookForm.email"
+              type="email"
+              :placeholder="guestbookCopy.placeholders.email"
+              required
+            >
+          </label>
+
+          <label class="journey-field journey-field-message">
+            <span>{{ guestbookCopy.fields.message }}</span>
+            <textarea
+              v-model.trim="guestbookForm.message"
+              :placeholder="guestbookCopy.placeholders.message"
+              :maxlength="guestbookCopy.messageMaxLength"
+              rows="6"
+              required
+            ></textarea>
+          </label>
+
+          <div class="journey-form-actions">
+            <button class="journey-button is-primary" type="submit" :disabled="isSubmitting">
+              {{ isSubmitting ? '发送中...' : guestbookCopy.submit }}
+            </button>
+            <p v-if="guestbookCopy.note" class="journey-form-note">{{ guestbookCopy.note }}</p>
+            <p
+              v-if="guestbookStatus"
+              class="journey-form-status"
+              :class="{
+                'is-success': guestbookStatusType === 'success',
+                'is-error': guestbookStatusType === 'error'
+              }"
+            >
+              {{ guestbookStatus }}
+            </p>
+          </div>
+        </form>
+      </section>
+    </div>
   </section>
 </template>
 
@@ -207,12 +177,12 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
   contactLinkItems,
-  experienceCopy,
   guestbookCopy,
-  recentItems,
-  skillItems
+  journeyCards,
+  journeyNavItems,
+  journeyPanels,
+  journeyScenes
 } from '../../content/experienceContent';
-import { profileAvatarSrc, profileAvatarWebpSrc } from '../../content/assetContent';
 
 const guestbookForm = ref({
   email: '',
@@ -222,86 +192,105 @@ const guestbookForm = ref({
 const guestbookStatus = ref('');
 const guestbookStatusType = ref('');
 const isSubmitting = ref(false);
-const recentListRef = ref(null);
-const recentScrollbarVisible = ref(false);
-const recentScrollbar = ref({
-  enabled: false,
-  thumbHeight: 0,
-  thumbOffset: 0
-});
+const runwayRef = ref(null);
+const scrollProgress = ref(0);
+const prefersReducedMotion = ref(false);
 
-const experienceStats = computed(() => ([
-  {
-    label: 'Tool Stack',
-    value: String(skillItems.length).padStart(2, '0')
-  },
-  {
-    label: 'Recent Notes',
-    value: String(recentItems.length).padStart(2, '0')
-  },
-  {
-    label: 'Links',
-    value: String(contactLinkItems.length).padStart(2, '0')
-  }
-]));
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const easeInOutCubic = (value) => (value < 0.5
+  ? 4 * value * value * value
+  : 1 - Math.pow(-2 * value + 2, 3) / 2);
 
-const marqueeSkills = computed(() => [...skillItems, ...skillItems]);
-const marqueeSkillsReverse = computed(() => [...skillItems].reverse().concat([...skillItems].reverse()));
+const getSegmentProgress = (start, end, value = scrollProgress.value) => {
+  if (end <= start) return value >= end ? 1 : 0;
+  return clamp((value - start) / (end - start), 0, 1);
+};
 
-const recentScrollbarThumbStyle = computed(() => ({
-  height: `${recentScrollbar.value.thumbHeight}px`,
-  transform: `translate3d(0, ${recentScrollbar.value.thumbOffset}px, 0)`
-}));
+const getSceneOpacity = (index) => {
+  const progress = scrollProgress.value;
 
-let recentScrollbarTimer = 0;
-let animationObserver = null;
-
-const updateRecentScrollbar = () => {
-  const element = recentListRef.value;
-  if (!element) return;
-
-  const maxScroll = Math.max(element.scrollHeight - element.clientHeight, 0);
-  const enabled = maxScroll > 1;
-
-  if (!enabled) {
-    recentScrollbar.value = {
-      enabled: false,
-      thumbHeight: 0,
-      thumbOffset: 0
-    };
-    return;
+  if (index === 0) {
+    return clamp(1 - getSegmentProgress(0.16, 0.34, progress), 0, 1);
   }
 
-  const visibleRatio = element.clientHeight / element.scrollHeight;
-  const thumbHeight = Math.max(element.clientHeight * visibleRatio, 36);
-  const trackTravel = Math.max(element.clientHeight - thumbHeight, 0);
-  const thumbOffset = maxScroll > 0
-    ? (element.scrollTop / maxScroll) * trackTravel
-    : 0;
+  const windows = [
+    { start: 0, end: 0.2 },
+    { start: 0.14, end: 0.42 },
+    { start: 0.34, end: 0.68 },
+    { start: 0.58, end: 0.88 },
+    { start: 0.8, end: 1 }
+  ];
+  const { start, end } = windows[index];
+  const enter = getSegmentProgress(start, start + (end - start) * 0.36, progress);
+  const exit = 1 - getSegmentProgress(start + (end - start) * 0.6, end, progress);
 
-  recentScrollbar.value = {
-    enabled: true,
-    thumbHeight,
-    thumbOffset
+  return clamp(Math.min(enter, exit), 0, 1);
+};
+
+const getSceneStyle = (index) => {
+  const opacity = prefersReducedMotion.value ? (index === 0 ? 1 : 0) : getSceneOpacity(index);
+  const progress = scrollProgress.value;
+  const offset = [0, -6, -3, 0, 0][index];
+  const scale = [1.08, 1.12, 1.06, 1.04, 1.12][index];
+  const yShift = [0, -2, -4, -3, -10][index];
+  const xShift = [
+    0,
+    -12 * getSegmentProgress(0.16, 0.42, progress),
+    -4 * getSegmentProgress(0.34, 0.68, progress),
+    3 * getSegmentProgress(0.62, 0.86, progress),
+    0
+  ][index];
+  const motionScale = scale - getSegmentProgress(0, 1, progress) * 0.03;
+
+  return {
+    opacity,
+    transform: `translate3d(${offset + xShift}%, ${yShift}%, 0) scale(${motionScale})`
   };
 };
 
-const showRecentScrollbar = () => {
-  recentScrollbarVisible.value = true;
-
-  if (recentScrollbarTimer) {
-    clearTimeout(recentScrollbarTimer);
+const getPanelStyle = (start, end, x = 0, y = 18, immediate = false) => {
+  if (prefersReducedMotion.value) {
+    return {
+      opacity: 1,
+      transform: 'translate3d(0, 0, 0)'
+    };
   }
 
-  recentScrollbarTimer = window.setTimeout(() => {
-    recentScrollbarVisible.value = false;
-  }, 1600);
+  const enterEnd = start + (end - start) * 0.28;
+  const exitStart = start + (end - start) * 0.72;
+  const enter = immediate ? 1 : getSegmentProgress(start, enterEnd);
+  const exit = end >= 0.995 ? 1 : 1 - getSegmentProgress(exitStart, end);
+  const opacity = clamp(Math.min(enter, exit), 0, 1);
+  const eased = easeInOutCubic(opacity);
+
+  return {
+    opacity,
+    transform: `translate3d(${(1 - eased) * x}px, ${(1 - eased) * y}px, 0)`
+  };
 };
 
-const handleRecentScroll = () => {
-  updateRecentScrollbar();
-  showRecentScrollbar();
-};
+const journeyProgressStyle = computed(() => ({
+  transform: `scaleY(${clamp(scrollProgress.value, 0.01, 1)})`
+}));
+
+const nightShadeStyle = computed(() => ({
+  opacity: prefersReducedMotion.value ? 0.42 : 0.58 - getSegmentProgress(0.08, 0.42) * 0.5
+}));
+
+const warmthStyle = computed(() => {
+  const warmth = getSegmentProgress(0.56, 0.86);
+  return {
+    opacity: warmth * 0.72
+  };
+});
+
+const skyLiftStyle = computed(() => {
+  const lift = prefersReducedMotion.value ? 0 : getSegmentProgress(0.84, 1);
+  return {
+    transform: `translate3d(0, ${-lift * 16}%, 0) scale(${1 + lift * 0.08})`,
+    opacity: 0.18 + lift * 0.42
+  };
+});
 
 const isHttpLink = (href) => /^https?:\/\//i.test(href || '');
 const getContactTarget = (href) => (isHttpLink(href) ? '_blank' : undefined);
@@ -313,13 +302,13 @@ const submitGuestbook = async () => {
 
   if (!email || !message) {
     guestbookStatusType.value = 'error';
-    guestbookStatus.value = '璇峰厛濉啓閭鍜岀暀瑷€鍐呭銆?';
+    guestbookStatus.value = '请先填写邮箱和留言内容。';
     return;
   }
 
   isSubmitting.value = true;
   guestbookStatusType.value = '';
-  guestbookStatus.value = '姝ｅ湪鍙戦€佺暀瑷€...';
+  guestbookStatus.value = '正在发送留言...';
 
   try {
     const response = await fetch('/api/guestbook', {
@@ -337,944 +326,670 @@ const submitGuestbook = async () => {
 
     if (!response.ok || !result.ok) {
       guestbookStatusType.value = 'error';
-      guestbookStatus.value = result.message || '鍙戦€佸け璐ワ紝璇风◢鍚庡啀璇曘€?';
+      guestbookStatus.value = result.message || '发送失败，请稍后再试。';
       return;
     }
 
     guestbookStatusType.value = 'success';
-    guestbookStatus.value = result.message || '鐣欒█宸茬粡鍙戦€佹垚鍔熴€?';
+    guestbookStatus.value = result.message || '留言已经发送成功。';
     guestbookForm.value.email = '';
     guestbookForm.value.message = '';
   } catch (error) {
     guestbookStatusType.value = 'error';
-    guestbookStatus.value = error instanceof Error ? error.message : '鍙戦€佸け璐ワ紝璇风◢鍚庡啀璇曘€?';
+    guestbookStatus.value = error instanceof Error ? error.message : '发送失败，请稍后再试。';
   } finally {
     isSubmitting.value = false;
   }
 };
 
-const initScrollAnimations = () => {
-  const elements = document.querySelectorAll('.animate-on-scroll');
-  if (!elements.length || !('IntersectionObserver' in window)) return;
+let scrollFrame = 0;
+let motionMediaQuery;
 
-  animationObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
+const updateScrollProgress = () => {
+  scrollFrame = 0;
 
-      const delay = entry.target.getAttribute('data-animation-delay') || '0ms';
-      entry.target.style.setProperty('--enter-delay', delay);
-      entry.target.classList.add('animate-in');
-      animationObserver?.unobserve(entry.target);
-    });
-  }, {
-    rootMargin: '0px 0px -10% 0px',
-    threshold: 0.12
-  });
+  if (!runwayRef.value) return;
+  if (prefersReducedMotion.value) {
+    scrollProgress.value = 0;
+    return;
+  }
 
-  elements.forEach((el) => animationObserver?.observe(el));
+  const rect = runwayRef.value.getBoundingClientRect();
+  const total = Math.max(runwayRef.value.offsetHeight - window.innerHeight, 1);
+  scrollProgress.value = clamp(-rect.top / total, 0, 1);
+};
+
+const requestScrollUpdate = () => {
+  if (scrollFrame) return;
+  scrollFrame = requestAnimationFrame(updateScrollProgress);
+};
+
+const updateReducedMotionPreference = () => {
+  prefersReducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  updateScrollProgress();
 };
 
 onMounted(() => {
-  updateRecentScrollbar();
-  initScrollAnimations();
-  window.addEventListener('resize', updateRecentScrollbar);
+  motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  updateReducedMotionPreference();
+  window.addEventListener('scroll', requestScrollUpdate, { passive: true });
+  window.addEventListener('resize', requestScrollUpdate);
+  motionMediaQuery.addEventListener?.('change', updateReducedMotionPreference);
+  updateScrollProgress();
 });
 
 onBeforeUnmount(() => {
-  clearTimeout(recentScrollbarTimer);
-  animationObserver?.disconnect();
-  window.removeEventListener('resize', updateRecentScrollbar);
+  window.removeEventListener('scroll', requestScrollUpdate);
+  window.removeEventListener('resize', requestScrollUpdate);
+  motionMediaQuery?.removeEventListener?.('change', updateReducedMotionPreference);
+  cancelAnimationFrame(scrollFrame);
 });
 </script>
 
 <style scoped>
-.experience-section {
-  --accent-blue: #76c7d7;
-  --accent-gold: #d3cb9a;
-  --ink-strong: #142c3f;
-  --ink-soft: rgba(20, 44, 63, 0.72);
+.journey-section {
+  --text-light: #fff7ed;
+  --glass-bg: rgba(255, 255, 255, 0.16);
+  --glass-border: rgba(255, 255, 255, 0.28);
   position: relative;
   min-height: 100svh;
-  padding: 5.8rem 1.5rem 5.4rem;
-  overflow-x: hidden;
-  color: var(--ink-strong);
-  font-family: 'Outfit', 'Noto Sans SC', 'Segoe UI', sans-serif;
-  background:
-    linear-gradient(180deg, rgba(3, 8, 14, 0.98) 0%, rgba(8, 18, 28, 0.82) 11%, rgba(213, 228, 236, 0.28) 25%, rgba(244, 247, 248, 0.98) 43%, rgba(247, 249, 250, 0.98) 60%, rgba(221, 232, 238, 0.84) 79%, rgba(33, 58, 76, 0.42) 93%, rgba(7, 15, 23, 0.94) 100%),
-    radial-gradient(circle at 14% 24%, rgba(118, 199, 215, 0.14), transparent 24%),
-    radial-gradient(circle at 84% 18%, rgba(211, 203, 154, 0.12), transparent 22%),
-    repeating-linear-gradient(90deg, rgba(19, 58, 82, 0.03) 0 1px, transparent 1px 118px);
+  padding: 0 0 6rem;
+  background: linear-gradient(180deg, rgba(3, 8, 14, 0.98) 0%, rgba(8, 18, 28, 0.9) 100%);
+  color: var(--text-light);
+  overflow: visible;
 }
 
-.experience-section::before {
-  position: absolute;
-  inset: 0;
-  content: '';
-  background-image:
-    linear-gradient(180deg, rgba(32, 76, 104, 0.05) 0 1px, transparent 1px 100%),
-    linear-gradient(90deg, rgba(32, 76, 104, 0.03) 0 1px, transparent 1px 100%);
-  background-size: 72px 72px;
-  opacity: 0.2;
-  pointer-events: none;
-}
-
-.experience-section::after {
-  position: absolute;
-  inset: 0 auto auto 0;
-  width: 100%;
-  height: 18rem;
-  content: '';
-  background: linear-gradient(180deg, rgba(3, 8, 14, 0.98) 0%, rgba(8, 16, 24, 0.4) 42%, transparent 100%);
-  pointer-events: none;
-}
-
-.experience-section-bottom-haze {
-  position: absolute;
-  inset: auto 0 0;
-  height: 42vh;
-  min-height: 18rem;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 50% 100%, rgba(10, 28, 40, 0.62) 0%, rgba(10, 28, 40, 0.24) 36%, transparent 78%),
-    linear-gradient(180deg, transparent 0%, rgba(10, 32, 48, 0.12) 22%, rgba(7, 24, 38, 0.46) 66%, rgba(4, 12, 22, 0.92) 100%);
-  filter: blur(10px);
-}
-
-.experience-shell {
-  position: relative;
-  z-index: 1;
-  width: min(100%, 1220px);
-  margin: 0 auto;
-}
-
-.experience-nav {
+.journey-nav {
   position: sticky;
   top: 1rem;
-  z-index: 12;
+  z-index: 30;
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 2.4rem;
-  padding: 0.92rem 1.28rem 0.92rem 1.46rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 0.88rem 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(237, 243, 245, 0.34)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent);
+    linear-gradient(180deg, rgba(15, 24, 36, 0.56), rgba(15, 24, 36, 0.28)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
   box-shadow:
-    0 18px 48px rgba(8, 24, 36, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.66);
-  backdrop-filter: blur(18px) saturate(1.08);
+    0 18px 42px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px);
 }
 
-.brand-mark,
-.nav-links a {
-  color: #24445f;
+.journey-brand,
+.journey-nav-links a {
+  color: rgba(255, 247, 237, 0.94);
   text-decoration: none;
 }
 
-.brand-mark {
-  flex: 0 0 auto;
-  font-size: 1rem;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.brand-mark span {
-  color: var(--accent-blue);
-}
-
-.nav-links {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.38rem;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
-  font-weight: 800;
-}
-
-.nav-links a {
-  padding: 0.62rem 0.88rem;
-  border-radius: 999px;
-  transition: background-color 0.28s ease, color 0.28s ease, transform 0.28s ease;
-}
-
-.nav-links a:hover {
-  background: rgba(118, 199, 215, 0.1);
-  color: #17324a;
-  transform: translateY(-1px);
-}
-
-.nav-links .nav-plate-link {
-  color: #102837;
-  background: linear-gradient(135deg, rgba(118, 199, 215, 0.96), rgba(211, 203, 154, 0.94));
-  box-shadow:
-    0 12px 28px rgba(118, 199, 215, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  white-space: nowrap;
-}
-
-.nav-links .nav-plate-link:hover {
-  color: #0d202c;
-  background: linear-gradient(135deg, rgba(118, 199, 215, 1), rgba(218, 210, 160, 1));
-}
-
-.experience-stage {
-  display: grid;
-  gap: 3.8rem;
-}
-
-.section-kicker,
-.panel-heading h3,
-.panel-heading p,
-.profile-copy p,
-.intro-copy p,
-.contact-panel p,
-.guestbook-copy p {
-  margin: 0;
-}
-
-.section-kicker {
-  color: rgba(26, 94, 124, 0.82);
-  font-size: 0.76rem;
+.journey-brand {
+  font-size: 0.82rem;
   font-weight: 900;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
-.intro-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.86fr);
-  gap: 3rem;
-  align-items: center;
-  min-height: 70svh;
-  padding: 0 0 1rem;
-}
-
-.intro-copy {
-  display: grid;
-  gap: 1.2rem;
-  align-content: start;
-}
-
-.intro-copy h2 {
-  margin: 0;
-  max-width: 9ch;
-  color: #152d40;
-  font-size: clamp(3.2rem, 6vw, 6.2rem);
-  font-weight: 900;
-  line-height: 0.92;
-  letter-spacing: -0.05em;
-}
-
-.hero-summary {
-  max-width: 34rem;
-  color: var(--ink-soft);
-  font-size: 1.02rem;
-  font-weight: 700;
-  line-height: 1.86;
-}
-
-.hero-summary-link {
-  color: #1b89a8;
-  font-weight: 900;
-  text-decoration: none;
-}
-
-.hero-summary-link:hover {
-  text-decoration: underline;
-}
-
-.intro-side {
-  display: grid;
-  gap: 2rem;
-  justify-items: center;
-}
-
-.breathing-loader {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: min(100%, 22rem);
-  aspect-ratio: 1 / 1;
-}
-
-.loader-core,
-.loader-ring,
-.loader-line {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-}
-
-.loader-core {
-  inset: 25%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.92) 0%, rgba(235, 242, 245, 0.72) 48%, rgba(118, 199, 215, 0.08) 100%);
-  box-shadow:
-    0 24px 48px rgba(28, 64, 86, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  animation: breathe-core 5.8s ease-in-out infinite;
-}
-
-.loader-ring {
-  border: 1px solid rgba(22, 70, 96, 0.12);
-}
-
-.loader-ring-a {
-  inset: 10%;
-  animation: breathe-ring 6.4s ease-in-out infinite;
-}
-
-.loader-ring-b {
-  inset: 0;
-  border-color: rgba(22, 70, 96, 0.08);
-  animation: breathe-ring 6.4s ease-in-out infinite reverse;
-}
-
-.loader-line {
-  inset: 6% 50%;
-  width: 1px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(118, 199, 215, 0), rgba(118, 199, 215, 0.62), rgba(118, 199, 215, 0));
-  animation: loader-scan 5.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-
-.loader-label {
-  position: relative;
-  z-index: 1;
-  color: rgba(20, 44, 63, 0.68);
-  font-size: 0.82rem;
-  font-weight: 900;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-
-.intro-metrics {
-  display: grid;
-  width: min(100%, 24rem);
-  gap: 0.7rem;
-}
-
-.intro-metric {
+.journey-nav-links {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid rgba(18, 54, 78, 0.12);
+  align-items: center;
+  gap: 0.28rem;
+  flex-wrap: wrap;
 }
 
-.intro-metric:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-
-.intro-metric-value {
-  color: #142c3f;
-  font-size: clamp(1.8rem, 3vw, 2.7rem);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.04em;
-}
-
-.intro-metric-label {
-  color: rgba(20, 44, 63, 0.62);
+.journey-nav-links a {
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  transition: background-color 0.22s ease, transform 0.22s ease;
 }
 
-.profile-panel {
-  display: grid;
-  grid-template-columns: minmax(18rem, 23rem) minmax(0, 1fr);
-  gap: 4rem;
-  align-items: center;
-  padding: 1rem 0;
+.journey-nav-links a:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
 }
 
-.profile-picture-frame {
+.journey-runway {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1.06;
-  padding: 0.52rem;
-  border: 1px solid rgba(255, 255, 255, 0.36);
-  border-radius: 24px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(234, 242, 245, 0.66)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent);
-  box-shadow:
-    0 24px 56px rgba(28, 64, 86, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.86);
+  min-height: 420svh;
+  margin-top: 0;
 }
 
-.profile-picture-frame::after {
+.journey-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.journey-progress {
+  position: absolute;
+  top: 18vh;
+  right: clamp(1rem, 3vw, 2.4rem);
+  z-index: 12;
+  width: 2px;
+  height: 34vh;
+}
+
+.journey-progress-track,
+.journey-progress-fill {
   position: absolute;
   inset: 0;
-  content: '';
-  border-radius: inherit;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.66);
+  border-radius: 999px;
+  transform-origin: top center;
+}
+
+.journey-progress-track {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.journey-progress-fill {
+  background: linear-gradient(180deg, #fff1dd 0%, #f4ab78 45%, #8f86db 100%);
+  box-shadow: 0 0 14px rgba(244, 171, 120, 0.34);
+}
+
+.scene-stack,
+.scene-layer,
+.scene-image,
+.scene-night-shade,
+.scene-warmth,
+.scene-lift,
+.scene-fog {
+  position: absolute;
+  inset: 0;
+}
+
+.scene-layer {
+  will-change: transform, opacity;
+}
+
+.scene-image {
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: saturate(1.03);
+}
+
+.scene-layer-2 .scene-image {
+  background-position: center 56%;
+}
+
+.scene-layer-5 .scene-image {
+  background-position: center 18%;
+}
+
+.scene-night-shade {
+  z-index: 5;
+  background:
+    linear-gradient(180deg, rgba(2, 6, 12, 0.72) 0%, rgba(2, 6, 12, 0.18) 28%, rgba(2, 6, 12, 0.22) 100%),
+    radial-gradient(circle at 16% 18%, rgba(28, 16, 43, 0.46), transparent 34%);
   pointer-events: none;
 }
 
-.profile-picture-frame picture,
-.guestbook-image picture,
-.profile-picture-frame img,
-.guestbook-image img {
-  display: block;
-  width: 100%;
+.scene-warmth {
+  z-index: 6;
+  background:
+    radial-gradient(circle at 50% 72%, rgba(255, 182, 116, 0.38), transparent 32%),
+    linear-gradient(180deg, rgba(255, 146, 88, 0) 0%, rgba(255, 146, 88, 0.14) 66%, rgba(72, 20, 31, 0.22) 100%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.scene-lift {
+  z-index: 7;
+  background:
+    radial-gradient(circle at 78% 12%, rgba(255, 255, 255, 0.28), transparent 18%),
+    linear-gradient(180deg, rgba(208, 222, 255, 0.12) 0%, rgba(208, 222, 255, 0) 48%);
+  pointer-events: none;
+}
+
+.scene-fog {
+  z-index: 8;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(255, 220, 205, 0.18) 0%, rgba(255, 220, 205, 0.06) 22%, transparent 54%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 62%, rgba(236, 216, 235, 0.18) 78%, rgba(226, 198, 233, 0.28) 100%);
+  mix-blend-mode: screen;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.journey-overlay {
+  position: relative;
+  z-index: 10;
+  width: min(1120px, calc(100% - 3rem));
   height: 100%;
+  margin: 0 auto;
 }
 
-.profile-picture-frame img,
-.guestbook-image img {
-  border-radius: 18px;
-  object-fit: cover;
-  object-position: 58% center;
+.journey-kicker,
+.journey-summary,
+.journey-panel p,
+.journey-contact-copy p,
+.journey-guestbook-copy p,
+.journey-card p,
+.journey-contact-link small,
+.journey-form-note,
+.journey-form-status {
+  margin: 0;
 }
 
-.profile-copy {
-  display: grid;
-  gap: 1rem;
-}
-
-.profile-role {
-  color: #142c3f;
-  font-size: clamp(1.5rem, 2vw, 2rem);
+.journey-kicker {
+  color: rgba(255, 237, 217, 0.82);
+  font-size: 0.76rem;
   font-weight: 900;
-  line-height: 1.08;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
-.profile-text,
-.skills-note,
-.contact-text,
-.guestbook-copy p,
-.guestbook-note,
-.guestbook-status,
-.recent-item p {
-  color: var(--ink-soft);
+.journey-panel {
+  position: absolute;
+  transition:
+    opacity 0.28s linear,
+    transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.journey-hero-panel {
+  top: 16vh;
+  left: 0;
+  display: grid;
+  gap: 1.1rem;
+  width: min(38rem, 58vw);
+}
+
+.journey-hero-panel h2 {
+  margin: 0;
+  max-width: 9ch;
+  font-size: clamp(3rem, 6vw, 6rem);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+}
+
+.journey-summary,
+.journey-panel p {
+  color: rgba(255, 244, 233, 0.82);
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.82;
 }
 
-.skills-panel {
-  display: grid;
-  gap: 1.6rem;
-  padding: 1.1rem 0;
-}
-
-.panel-heading {
-  display: grid;
-  gap: 0.6rem;
-}
-
-.panel-heading h3,
-.guestbook-copy h2 {
-  margin: 0;
-  color: #142c3f;
-  font-size: clamp(1.65rem, 2vw, 2.25rem);
-  font-weight: 900;
-  line-height: 1.04;
-}
-
-.skill-marquee-shell {
+.journey-story-panel {
+  top: 24vh;
+  left: 0;
+  width: min(31rem, 46vw);
   display: grid;
   gap: 0.9rem;
-  overflow: hidden;
 }
 
-.skill-track {
-  display: inline-flex;
-  width: max-content;
-  min-width: 100%;
-  gap: 0.88rem;
+.journey-panel h3,
+.journey-contact-copy h3,
+.journey-guestbook-copy h3 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 3.2rem);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
 }
 
-.skill-track-forward {
-  animation: marquee-forward 24s linear infinite;
-}
-
-.skill-track-reverse {
-  animation: marquee-reverse 28s linear infinite;
-}
-
-.skill-marquee-shell:hover .skill-track {
-  animation-play-state: paused;
-}
-
-.skill-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.85rem;
-  padding: 0 1.12rem;
-  border: 1px solid rgba(27, 90, 120, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.52);
-  color: #1a4662;
-  font-size: 0.84rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.76),
-    0 12px 24px rgba(26, 64, 88, 0.04);
-}
-
-.detail-grid {
+.journey-day-panel {
+  inset: auto 0 13vh 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.78fr);
-  gap: 3rem;
+  grid-template-columns: minmax(14rem, 21rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: end;
+}
+
+.journey-day-copy {
+  display: grid;
+  gap: 0.8rem;
+  width: min(22rem, 100%);
+}
+
+.journey-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.journey-card {
+  min-height: 10rem;
+  padding: 1.1rem 1.1rem 1.25rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  background: var(--glass-bg);
+  box-shadow: 0 24px 80px rgba(20, 20, 40, 0.18);
+  backdrop-filter: blur(18px);
+}
+
+.journey-card-index {
+  display: inline-block;
+  margin-bottom: 0.9rem;
+  color: rgba(255, 233, 212, 0.72);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.journey-card h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1.02rem;
+  font-weight: 900;
+  color: #fff3e5;
+}
+
+.journey-card p {
+  color: rgba(255, 239, 223, 0.76);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.68;
+}
+
+.journey-sunset-panel {
+  right: 0;
+  bottom: 16vh;
+  width: min(26rem, 42vw);
+  display: grid;
+  gap: 0.8rem;
+  text-align: right;
+}
+
+.journey-outro-panel {
+  left: 50%;
+  bottom: 16vh;
+  width: min(34rem, 78vw);
+  display: grid;
+  gap: 0.95rem;
+  text-align: center;
+  translate: -50% 0;
+}
+
+.journey-dock {
+  position: relative;
+  z-index: 4;
+  width: min(1120px, calc(100% - 3rem));
+  margin: -2rem auto 0;
+  display: grid;
+  gap: 1.35rem;
+}
+
+.journey-contact-panel,
+.journey-guestbook-panel {
+  display: grid;
+  gap: 1.35rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(18, 24, 35, 0.56), rgba(18, 24, 35, 0.32)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+}
+
+.journey-contact-panel {
+  grid-template-columns: minmax(16rem, 24rem) minmax(0, 1fr);
   align-items: start;
 }
 
-.timeline-panel,
-.contact-panel {
+.journey-contact-copy,
+.journey-guestbook-copy {
   display: grid;
-  gap: 1.4rem;
+  gap: 0.7rem;
 }
 
-.recent-list-shell {
-  position: relative;
+.journey-contact-copy p,
+.journey-guestbook-copy p,
+.journey-contact-link small,
+.journey-form-note,
+.journey-form-status {
+  color: rgba(255, 239, 223, 0.76);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.78;
 }
 
-.recent-list-shell::before {
-  position: absolute;
-  inset: 0 auto 0 0.82rem;
-  width: 1px;
-  content: '';
-  background: linear-gradient(180deg, rgba(118, 199, 215, 0.34), rgba(118, 199, 215, 0.08) 78%, rgba(118, 199, 215, 0));
-  pointer-events: none;
-}
-
-.recent-list {
+.journey-contact-links {
   display: grid;
-  gap: 1.35rem;
-  max-height: 30rem;
-  margin: 0;
-  padding: 0 0.75rem 0 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  list-style: none;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
 }
 
-.recent-list::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
-
-.recent-item {
-  position: relative;
-  display: grid;
-  gap: 0.42rem;
-  padding-left: 2rem;
-}
-
-.recent-item::before {
-  position: absolute;
-  top: 0.52rem;
-  left: 0.63rem;
-  width: 0.42rem;
-  height: 0.42rem;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-blue), #a1dde7);
-  box-shadow: 0 0 0 0.34rem rgba(118, 199, 215, 0.08);
-  content: '';
-}
-
-.recent-item + .recent-item {
-  padding-top: 1.18rem;
-  border-top: 1px solid rgba(20, 54, 76, 0.08);
-}
-
-.recent-year {
-  color: #1d88a4;
-  font-size: 0.76rem;
-  font-weight: 900;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-
-.recent-scrollbar {
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: 0.3rem;
-  opacity: 0;
-  transition: opacity 0.24s ease;
-  pointer-events: none;
-}
-
-.recent-scrollbar.is-visible {
-  opacity: 1;
-}
-
-.recent-scrollbar::before {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  content: '';
-}
-
-.recent-scrollbar-thumb {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  min-height: 2.2rem;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(118, 199, 215, 0.92), rgba(211, 203, 154, 0.92));
-  box-shadow: 0 0 12px rgba(118, 199, 215, 0.2);
-}
-
-.contact-links {
-  display: grid;
-  gap: 1rem;
-  margin-top: 0.3rem;
-}
-
-.contact-link {
+.journey-contact-link {
   display: grid;
   gap: 0.22rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(20, 54, 76, 0.1);
-  color: #173f5b;
+  min-height: 5rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff3e5;
   text-decoration: none;
-  transition: transform 0.24s ease, color 0.24s ease;
+  transition: transform 0.18s ease, border-color 0.18s ease;
 }
 
-.contact-link:first-child {
-  padding-top: 0;
-  border-top: 0;
+.journey-contact-link:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
-.contact-link:hover {
-  transform: translateX(4px);
-  color: #103248;
-}
-
-.contact-link strong {
-  font-size: 0.96rem;
+.journey-contact-link strong {
+  font-size: 0.92rem;
   font-weight: 900;
 }
 
-.contact-link small {
-  color: rgba(35, 67, 92, 0.7);
-  font-size: 0.76rem;
-  font-weight: 700;
-  line-height: 1.58;
-  word-break: break-all;
+.journey-guestbook-panel {
+  grid-template-columns: minmax(16rem, 23rem) minmax(0, 1fr);
+  align-items: start;
 }
 
-.guestbook-panel {
+.journey-guestbook-form {
   display: grid;
-  grid-template-columns: minmax(16rem, 21rem) minmax(0, 1fr);
-  gap: 2.4rem;
-  padding: 1.6rem 1.65rem;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 24px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(234, 242, 245, 0.62)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent);
-  box-shadow:
-    0 26px 54px rgba(18, 48, 66, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  gap: 0.95rem;
 }
 
-.guestbook-copy {
+.journey-field {
   display: grid;
-  gap: 0.72rem;
-  align-content: start;
+  gap: 0.42rem;
 }
 
-.guestbook-image {
-  width: min(100%, 16rem);
-  aspect-ratio: 1 / 1;
-  margin-top: 0.15rem;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.5);
-  box-shadow:
-    0 16px 34px rgba(24, 55, 76, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.82);
-}
-
-.guestbook-form {
-  display: grid;
-  gap: 1rem;
-  width: min(100%, 48rem);
-  justify-self: end;
-}
-
-.guestbook-field {
-  display: grid;
-  gap: 0.45rem;
-}
-
-.guestbook-field span {
-  color: #295570;
+.journey-field span {
+  color: rgba(255, 241, 229, 0.82);
   font-size: 0.8rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
 }
 
-.guestbook-field input,
-.guestbook-field textarea {
+.journey-field input,
+.journey-field textarea {
   width: 100%;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
   padding: 0.92rem 1rem;
-  border: 1px solid rgba(112, 178, 207, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.7);
-  color: #224966;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff4ea;
   font: inherit;
   outline: none;
-  transition: border-color 0.24s ease, box-shadow 0.24s ease, background-color 0.24s ease;
+  transition: border-color 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease;
 }
 
-.guestbook-field textarea {
+.journey-field textarea {
   min-height: 8rem;
   resize: vertical;
 }
 
-.guestbook-field input:focus,
-.guestbook-field textarea:focus {
-  border-color: rgba(118, 199, 215, 0.4);
-  box-shadow: 0 0 0 4px rgba(118, 199, 215, 0.12);
-  background: rgba(255, 255, 255, 0.86);
+.journey-field input:focus,
+.journey-field textarea:focus {
+  border-color: rgba(255, 232, 207, 0.26);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
 }
 
-.guestbook-actions {
+.journey-form-actions {
   display: grid;
   gap: 0.45rem;
 }
 
-.guestbook-submit {
+.journey-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   justify-self: start;
-  min-height: 2.9rem;
-  padding: 0 1.16rem;
-  border: 0;
+  min-height: 2.85rem;
+  padding: 0 1.1rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(118, 199, 215, 0.96), rgba(211, 203, 154, 0.96));
-  color: #16384f;
-  font: inherit;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, rgba(255, 240, 225, 0.96), rgba(244, 171, 120, 0.94));
+  color: #26151b;
+  font-size: 0.84rem;
   font-weight: 900;
+  text-decoration: none;
   cursor: pointer;
   box-shadow:
-    0 14px 30px rgba(118, 199, 215, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+    0 16px 32px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.56);
+  transition: transform 0.18s ease;
 }
 
-.guestbook-submit:hover {
+.journey-button:hover {
   transform: translateY(-1px);
 }
 
-.guestbook-submit:active {
-  transform: translateY(0);
-}
-
-.guestbook-submit:disabled {
-  opacity: 0.72;
+.journey-button:disabled {
+  opacity: 0.68;
   cursor: wait;
   transform: none;
 }
 
-.guestbook-status {
-  color: #2d7d9f;
+.journey-form-status.is-success {
+  color: #d5ffd9;
 }
 
-.guestbook-status.is-success {
-  color: #1f7a5a;
+.journey-form-status.is-error {
+  color: #ffd2c6;
 }
 
-.guestbook-status.is-error {
-  color: #b65454;
-}
-
-.animate-on-scroll {
-  --enter-delay: 0ms;
-  opacity: 0;
-  filter: blur(10px);
-  transform: translate3d(0, 28px, 0) scale(0.988);
-  transition:
-    opacity 0.76s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.82s cubic-bezier(0.16, 1, 0.3, 1),
-    filter 0.76s cubic-bezier(0.16, 1, 0.3, 1);
-  transition-delay: var(--enter-delay);
-}
-
-.animate-on-scroll[data-enter='left'] {
-  transform: translate3d(-48px, 18px, 0) scale(0.988);
-}
-
-.animate-on-scroll[data-enter='right'] {
-  transform: translate3d(48px, 18px, 0) scale(0.988);
-}
-
-.animate-on-scroll.animate-in {
-  opacity: 1;
-  filter: blur(0);
-  transform: translate3d(0, 0, 0) scale(1);
-}
-
-@keyframes breathe-core {
-  0%,
-  100% {
-    transform: scale(0.92);
-    opacity: 0.92;
+@media (prefers-reduced-motion: reduce) {
+  .journey-runway {
+    min-height: 100svh;
   }
 
-  50% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes breathe-ring {
-  0%,
-  100% {
-    transform: scale(0.96);
-    opacity: 0.34;
+  .journey-stage {
+    position: relative;
+    height: 100svh;
   }
 
-  50% {
-    transform: scale(1.04);
-    opacity: 0.72;
-  }
-}
-
-@keyframes loader-scan {
-  0% {
-    transform: translateY(-32%);
-    opacity: 0;
+  .journey-progress {
+    display: none;
   }
 
-  12% {
-    opacity: 0.72;
-  }
-
-  50% {
-    transform: translateY(32%);
-    opacity: 0.82;
-  }
-
-  100% {
-    transform: translateY(40%);
-    opacity: 0;
-  }
-}
-
-@keyframes marquee-forward {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-@keyframes marquee-reverse {
-  from {
-    transform: translate3d(-50%, 0, 0);
-  }
-
-  to {
-    transform: translate3d(0, 0, 0);
+  .journey-panel {
+    transition: none;
   }
 }
 
 @media (max-width: 1080px) {
-  .intro-panel,
-  .profile-panel,
-  .detail-grid,
-  .guestbook-panel {
+  .journey-hero-panel {
+    width: min(34rem, 74vw);
+  }
+
+  .journey-day-panel,
+  .journey-contact-panel,
+  .journey-guestbook-panel {
     grid-template-columns: 1fr;
   }
 
-  .intro-copy h2 {
-    max-width: none;
-  }
-
-  .intro-side {
-    justify-items: start;
-  }
-
-  .guestbook-form {
-    width: 100%;
-    justify-self: stretch;
+  .journey-contact-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 900px) {
-  .experience-section {
-    padding-inline: 1rem;
-  }
-
-  .experience-nav {
+  .journey-nav {
     position: relative;
     top: 0;
-    border-radius: 22px;
+    width: min(100%, calc(100% - 2rem));
+    border-radius: 24px;
   }
 
-  .experience-stage {
-    gap: 2.4rem;
+  .journey-runway {
+    margin-top: 0;
+    min-height: 360svh;
+  }
+
+  .journey-overlay {
+    width: min(100%, calc(100% - 2rem));
+  }
+
+  .journey-hero-panel,
+  .journey-story-panel,
+  .journey-sunset-panel {
+    width: min(100%, 30rem);
+  }
+
+  .journey-day-panel {
+    inset: auto 0 10vh 0;
+    grid-template-columns: 1fr;
+  }
+
+  .journey-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .journey-sunset-panel {
+    left: 0;
+    right: auto;
+    text-align: left;
+  }
+
+  .journey-dock {
+    width: min(100%, calc(100% - 2rem));
   }
 }
 
 @media (max-width: 768px) {
-  .experience-section {
-    padding: 3rem 0.9rem 3rem;
+  .journey-section {
+    padding-bottom: 3rem;
   }
 
-  .experience-nav {
-    justify-content: center;
-    margin-bottom: 1.4rem;
-    padding: 0.8rem;
+  .journey-nav {
+    padding: 0.82rem;
   }
 
-  .brand-mark {
+  .journey-nav-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .journey-nav-links a {
+    display: grid;
+    place-items: center;
+  }
+
+  .journey-brand {
     display: none;
   }
 
-  .nav-links {
-    width: 100%;
-    justify-content: center;
+  .journey-hero-panel {
+    top: 13vh;
   }
 
-  .intro-panel {
-    min-height: auto;
+  .journey-hero-panel h2 {
+    font-size: clamp(2.6rem, 10vw, 4.2rem);
   }
 
-  .intro-copy h2 {
-    font-size: clamp(2.6rem, 11vw, 4rem);
-  }
-
-  .skill-chip {
-    min-height: 2.55rem;
-  }
-}
-
-@media (max-width: 540px) {
-  .nav-links {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.45rem;
-  }
-
-  .nav-links a {
-    justify-content: center;
-  }
-
-  .nav-links .nav-plate-link {
-    grid-column: 1 / -1;
+  .journey-contact-links {
+    grid-template-columns: 1fr;
   }
 }
 </style>

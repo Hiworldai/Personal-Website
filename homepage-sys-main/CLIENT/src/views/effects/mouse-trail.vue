@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
 :global(body) {
   width: 100%;
   margin: 0;
-  overflow-x: hidden;
+  overflow-x: clip;
   -ms-overflow-style: none;
 }
 
@@ -231,7 +231,7 @@ onBeforeUnmount(() => {
   width: 100%;
   min-height: 100svh;
   background: #02070c;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .album-load-sentinel {

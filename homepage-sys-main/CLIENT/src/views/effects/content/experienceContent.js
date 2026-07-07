@@ -1,80 +1,91 @@
-export const experienceCopy = {
-  brand: '每一位来到这里的朋友',
-  nav: {
-    home: '首页',
-    intro: '介绍',
-    skills: '技能',
-    contact: '联系'
-  },
-  heroSummary: {
-    before:
-      '感谢你来到我的网页！我是 Bejoy，热爱研究 AI 的应用，致力于打造最酷的 AI 产品，一直在探索与成长中。不管你是谁，我都很高兴你能来看看，希望这里能让你更了解我，也希望你有所收获！如果你有什么想法或建议，也欢迎到',
-    linkText: '留言板',
-    linkHref: '#guestbook-card',
-    after: '告诉我。'
-  },
-  role: 'AI全栈开发工程师',
-  profileText:
-    '空闲时间补后端知识，健身，做短视频。运用 AI 我拥有全栈的能力，能独立做出应用级产品雏形。',
-  skillsTitle: '技能 & 工具',
-  skillsNote:
-    '目前主要使用 AI 工具协作，做AI应用开发',
-  recentTitle: '近期动态',
-  contactTitle: '联系方式',
-  contactText:
-    '如果你想聊技术、合作，或者一起交流 AI 工具怎么用得更顺手，都可以联系我。'
-};
+export const journeyNavItems = [
+  { label: '开始', href: '#experience-title' },
+  { label: '旅程', href: '#journey-story' },
+  { label: '场景', href: '#journey-scenes' },
+  { label: '联系', href: '#guestbook-card' }
+];
 
-export const skillItems = ['HTML', 'CSS', 'JavaScript', 'TypeScript','Vue', 'Vite','npm','Wepack','Axios','uni-app', 'Git', 'Codex','后端略'];
+export const journeyScenes = [
+  {
+    key: 'morning-train',
+    image: '/images/journey-01-morning-train.png'
+  },
+  {
+    key: 'morning-bridge',
+    image: '/images/journey-02-morning-bridge.png'
+  },
+  {
+    key: 'noon',
+    image: '/images/journey-03-noon.png'
+  },
+  {
+    key: 'afternoon',
+    image: '/images/journey-04-afternoon.png'
+  },
+  {
+    key: 'evening',
+    image: '/images/journey-05-evening.png'
+  }
+];
 
-export const recentItems = [
+export const journeyPanels = [
   {
-  label: '2026.4--2026.6',
-  text: '入职成都觅核科技有限公司，AI全栈开发实习，独立负责开发八万人使用的音乐播放器前端，协调后端，参与AIGC音乐MV生成平台的全链路开发。'
-},
-  {
-    label: '2025.12--致今',
-    text: '认定工作方向,系统学期前端,并加入AI工具向全栈工程师发展,没事做点小的AI应用，致力做出最酷的AI产品'
+    key: 'intro',
+    id: 'experience-title',
+    kicker: 'Train Journey',
+    title: '沿着时间出发',
+    body: '从黑夜驶向天光，把滚动变成一段有镜头感的旅程。桥梁、云层、雾气与列车共同推进，让第二页成为一段可以被看见的叙事。'
   },
   {
-    label: '2025.10',
-    text: '笔试,面试,通过,拿到导游证,兼职导游,好评上百人'
+    key: 'story',
+    id: 'journey-story',
+    kicker: 'Moving Camera',
+    title: '让镜头跟随火车',
+    body: '不是简单切换图片，而是让场景随着滚动慢慢展开。列车作为主线，把夜色、白昼与夕阳连成一个完整的视觉旅程。'
   },
   {
-    label: '2025.6',
-    text: '跟着大博主创业恒温宠物窝项目,跑宠物线下市场,一星期获得联系方式300+'
+    key: 'scenes',
+    id: 'journey-scenes',
+    kicker: 'Scene System',
+    title: '穿过不同的世界',
+    body: '不同场景让页面不再单调，但统一的云层、雾气和移动方向，让它们仍然属于同一个故事。'
   },
   {
-    label: '2025.3.15',
-    text: '直播流量最高做上21万+,当日营业额5689元!'
+    key: 'sunset',
+    id: 'journey-sunset',
+    kicker: 'Warm Light',
+    title: '抵达黄昏',
+    body: '当天空变成橙红与深紫，旅程也进入情绪最浓的一幕。色温升高，云层变重，视线开始向更远的天空抬升。'
   },
   {
-    label: '2025.2',
-    text: '创办公司,准备创业直播带货.后来发现,工商个体户更方便.寻找团队成员'
+    key: 'outro',
+    id: 'journey-outro',
+    kicker: 'Next Stop',
+    title: '下一站，由你定义',
+    body: '把一次浏览变成一段可以被记住的旅程。继续向下，页面会自然衔接到最后的 3D 粒子影集。'
+  }
+];
+
+export const journeyCards = [
+  {
+    index: '01',
+    title: '视觉叙事',
+    description: '用镜头语言组织网页节奏，而不是平铺信息。'
   },
   {
-    label: '2025.1',
-    text: '入职光明食品（集团）有限公司全资子公司，做文职实习'
+    index: '02',
+    title: '场景连接',
+    description: '用火车、云层和雾气把不同地点串联起来。'
   },
   {
-    label: '2024.9',
-    text: '从零到一,创办百人社团,获得辅导员高度认可.顺着社团做电话卡,驾照业务,让社团成员享受当时最低价'
+    index: '03',
+    title: '滚动推进',
+    description: '通过层级位移、淡入与色温变化形成连续转场。'
   },
   {
-    label: '2024.9',
-    text: '自己兴趣做的短视频内容,流量不错,被百万(当时107万,现在26年4月225万+)博主互相关注'
-  },
-  {
-    label: '2024.6',
-    text: '由于能力突出,稳定输出爆款视频,破格提升为销售主管,负责三羊纺织集团的短视频直播板块'
-  },
-  {
-    label: '2024.3',
-    text: '参加三羊集团卖被套,系统学习销售技巧'
-  },
-  {
-    label: '2023.9',
-    text: '进入四川传媒学院,开启美好大学生活'
+    index: '04',
+    title: '内容承载',
+    description: '每一幕都有清晰的信息任务，而不是只做背景展示。'
   }
 ];
 
@@ -89,23 +100,23 @@ export const contactLinkItems = [
   },
   {
     label: '微信',
-    value: 'woaipaof（备注来意）点击查看二维码',
+    value: 'woaipaof（备注来意）',
     href: '/gallery/wechat-qr.png'
   }
 ];
 
 export const guestbookCopy = {
   title: '留言板',
-  description:
-    '如果您有想法，或者只是想留一句话，都欢迎在这里告诉我，我会认真看到。后面会做成弹幕永存在网站，期待你的留言！',
+  description: '如果你想交流网页叙事、前端实现、AI 应用，或者只是想聊聊这段火车旅程的视觉氛围，都可以在这里告诉我。',
   fields: {
-    email: '您的邮箱',
+    email: '你的邮箱',
     message: '想说的话'
   },
   placeholders: {
     email: 'name@example.com',
-    message: '写下你想对我说的内容...'
+    message: '写下你想交流的内容...'
   },
   submit: '发送留言',
+  note: '本地可以先预览页面，留言功能需要后端邮箱配置正常后才会真正发送。',
   messageMaxLength: 1200
 };
