@@ -5,137 +5,140 @@
         <a href="#experience-title" class="brand-mark"><span>Bejoy</span></a>
         <div class="nav-links">
           <a href="#experience-title">{{ experienceCopy.nav.home }}</a>
-          <a href="#about-card">{{ experienceCopy.nav.intro }}</a>
-          <a href="#skills-card">{{ experienceCopy.nav.skills }}</a>
-          <a href="#contact-card">{{ experienceCopy.nav.contact }}</a>
-          <a class="nav-plate-link" href="https://car.chenkanghong.top" target="_blank" rel="noopener noreferrer">AI识别车牌平台</a>
+          <a href="#about-panel">{{ experienceCopy.nav.intro }}</a>
+          <a href="#skills-panel">{{ experienceCopy.nav.skills }}</a>
+          <a href="#contact-panel">{{ experienceCopy.nav.contact }}</a>
+          <a class="nav-plate-link" href="https://car.chenkanghong.top" target="_blank" rel="noopener noreferrer">AI识别车牌项目</a>
         </div>
       </nav>
 
-      <div class="experience-grid">
-        <article 
-          id="experience-title" 
-          class="experience-card hero-card animate-on-scroll" 
-          data-animation-delay="0ms"
-          @mousemove="handleCardMouseMove"
-          @mouseleave="handleCardMouseLeave"
-        >
-          <span class="card-glow" :style="heroCardGlow"></span>
-          <h2><span>To</span>{{ experienceCopy.brand }}</h2>
-          <p class="hero-summary">
-            {{ experienceCopy.heroSummary.before }}
-            <a class="hero-summary-link" :href="experienceCopy.heroSummary.linkHref">
-              {{ experienceCopy.heroSummary.linkText }}
-            </a>
-            {{ experienceCopy.heroSummary.after }}
-          </p>
-          <span class="blue-dot" aria-hidden="true"></span>
-        </article>
-
-        <article 
-          id="skills-card" 
-          class="experience-card skills-card animate-on-scroll" 
-          data-animation-delay="120ms"
-          @mousemove="handleCardMouseMove"
-          @mouseleave="handleCardMouseLeave"
-        >
-          <span class="card-glow" :style="skillsCardGlow"></span>
-          <h3>{{ experienceCopy.skillsTitle }}</h3>
-          <p class="skills-note">{{ experienceCopy.skillsNote }}</p>
-          <div class="skill-list">
-            <span
-              v-for="(skill, index) in skillItems"
-              :key="skill"
-              :style="{ '--float-delay': `${index * 0.15}s` }"
-              class="skill-tag"
-            >{{ skill }}</span>
+      <div class="experience-stage">
+        <header id="experience-title" class="intro-panel animate-on-scroll" data-animation-delay="0ms" data-enter="up">
+          <div class="intro-copy">
+            <p class="section-kicker">Profile</p>
+            <h2>{{ experienceCopy.brand }}</h2>
+            <p class="hero-summary">
+              {{ experienceCopy.heroSummary.before }}
+              <a class="hero-summary-link" :href="experienceCopy.heroSummary.linkHref">
+                {{ experienceCopy.heroSummary.linkText }}
+              </a>
+              {{ experienceCopy.heroSummary.after }}
+            </p>
           </div>
-        </article>
 
-        <article 
-          id="about-card" 
-          class="experience-card profile-card animate-on-scroll" 
-          data-animation-delay="240ms"
-          @mousemove="handleCardMouseMove"
-          @mouseleave="handleCardMouseLeave"
-        >
-          <span class="card-glow" :style="aboutCardGlow"></span>
-          <div class="profile-picture-frame">
-            <picture>
-              <source :srcset="profileAvatarWebpSrc" type="image/webp">
-              <img
-                :src="profileAvatarSrc"
-                alt="Profile avatar"
-                width="471"
-                height="480"
-                loading="lazy"
-                decoding="async"
-              >
-            </picture>
+          <div class="intro-side">
+            <div class="breathing-loader" aria-hidden="true">
+              <span class="loader-core"></span>
+              <span class="loader-ring loader-ring-a"></span>
+              <span class="loader-ring loader-ring-b"></span>
+              <span class="loader-line"></span>
+              <span class="loader-label">CHEN KANGHONG</span>
+            </div>
+
+            <div class="intro-metrics" aria-label="Profile highlights">
+              <div v-for="item in experienceStats" :key="item.label" class="intro-metric">
+                <span class="intro-metric-value">{{ item.value }}</span>
+                <span class="intro-metric-label">{{ item.label }}</span>
+              </div>
+            </div>
           </div>
+        </header>
+
+        <section id="about-panel" class="profile-panel animate-on-scroll" data-animation-delay="120ms" data-enter="left">
+          <div class="profile-visual">
+            <div class="profile-picture-frame">
+              <picture>
+                <source :srcset="profileAvatarWebpSrc" type="image/webp">
+                <img
+                  :src="profileAvatarSrc"
+                  alt="Profile avatar"
+                  width="471"
+                  height="480"
+                  loading="lazy"
+                  decoding="async"
+                >
+              </picture>
+            </div>
+          </div>
+
           <div class="profile-copy">
+            <p class="section-kicker">About</p>
             <p class="profile-role">{{ experienceCopy.role }}</p>
             <p class="profile-text">{{ experienceCopy.profileText }}</p>
           </div>
-        </article>
+        </section>
 
-        <article 
-          class="experience-card timeline-card animate-on-scroll" 
-          data-animation-delay="360ms"
-          @mousemove="handleCardMouseMove"
-          @mouseleave="handleCardMouseLeave"
-        >
-          <span class="card-glow" :style="timelineCardGlow"></span>
-          <h3>{{ experienceCopy.recentTitle }}</h3>
-          <div class="recent-list-shell">
-            <ul ref="recentListRef" class="recent-list" aria-label="近期动态" @scroll.passive="handleRecentScroll">
-              <li v-for="item in recentItems" :key="item.label" class="recent-item">
-                <span class="recent-year">{{ item.label }}</span>
-                <p>{{ item.text }}</p>
-              </li>
-            </ul>
-            <div
-              v-if="recentScrollbar.enabled"
-              class="recent-scrollbar"
-              :class="{ 'is-visible': recentScrollbarVisible }"
-              aria-hidden="true"
-            >
-              <span class="recent-scrollbar-thumb" :style="recentScrollbarThumbStyle"></span>
+        <section id="skills-panel" class="skills-panel animate-on-scroll" data-animation-delay="180ms" data-enter="up">
+          <div class="panel-heading">
+            <p class="section-kicker">Toolkit</p>
+            <h3>{{ experienceCopy.skillsTitle }}</h3>
+            <p class="skills-note">{{ experienceCopy.skillsNote }}</p>
+          </div>
+
+          <div class="skill-marquee-shell">
+            <div class="skill-track skill-track-forward">
+              <span v-for="skill in marqueeSkills" :key="`forward-${skill}`" class="skill-chip">{{ skill }}</span>
+            </div>
+            <div class="skill-track skill-track-reverse">
+              <span v-for="skill in marqueeSkillsReverse" :key="`reverse-${skill}`" class="skill-chip">{{ skill }}</span>
             </div>
           </div>
-        </article>
+        </section>
 
-        <article 
-          id="contact-card" 
-          class="experience-card contact-card animate-on-scroll" 
-          data-animation-delay="480ms"
-          @mousemove="handleCardMouseMove"
-          @mouseleave="handleCardMouseLeave"
-        >
-          <span class="card-glow" :style="contactCardGlow"></span>
-          <h3>{{ experienceCopy.contactTitle }}</h3>
-          <p class="contact-text">{{ experienceCopy.contactText }}</p>
-          <div class="contact-links" aria-label="Contact links">
-            <component
-              :is="item.href ? 'a' : 'div'"
-              v-for="item in contactLinkItems"
-              :key="item.label"
-              class="contact-link"
-              :href="item.href || undefined"
-              :target="getContactTarget(item.href)"
-              :rel="getContactRel(item.href)"
-              :aria-label="`${item.label}：${item.value || item.href}`"
-            >
-              <strong>{{ item.label }}</strong>
-              <small>{{ item.value || item.href }}</small>
-            </component>
-          </div>
-        </article>
-      </div>
+        <div class="detail-grid">
+          <section class="timeline-panel animate-on-scroll" data-animation-delay="220ms" data-enter="left">
+            <div class="panel-heading">
+              <p class="section-kicker">Recent Notes</p>
+              <h3>{{ experienceCopy.recentTitle }}</h3>
+            </div>
 
-      <div id="guestbook-card" class="guestbook-section" aria-labelledby="guestbook-title">
-        <div class="experience-card guestbook-card">
+            <div class="recent-list-shell">
+              <ul ref="recentListRef" class="recent-list" aria-label="杩戞湡鍔ㄦ€?" @scroll.passive="handleRecentScroll">
+                <li v-for="item in recentItems" :key="item.label + item.text" class="recent-item">
+                  <span class="recent-year">{{ item.label }}</span>
+                  <p>{{ item.text }}</p>
+                </li>
+              </ul>
+              <div
+                v-if="recentScrollbar.enabled"
+                class="recent-scrollbar"
+                :class="{ 'is-visible': recentScrollbarVisible }"
+                aria-hidden="true"
+              >
+                <span class="recent-scrollbar-thumb" :style="recentScrollbarThumbStyle"></span>
+              </div>
+            </div>
+          </section>
+
+          <section id="contact-panel" class="contact-panel animate-on-scroll" data-animation-delay="280ms" data-enter="right">
+            <div class="panel-heading">
+              <p class="section-kicker">Contact</p>
+              <h3>{{ experienceCopy.contactTitle }}</h3>
+            </div>
+
+            <p class="contact-text">{{ experienceCopy.contactText }}</p>
+
+            <div class="contact-links" aria-label="Contact links">
+              <component
+                :is="item.href ? 'a' : 'div'"
+                v-for="item in contactLinkItems"
+                :key="item.label"
+                class="contact-link"
+                :href="item.href || undefined"
+                :target="getContactTarget(item.href)"
+                :rel="getContactRel(item.href)"
+                :aria-label="`${item.label}锛?{item.value || item.href}`"
+              >
+                <strong>{{ item.label }}</strong>
+                <small>{{ item.value || item.href }}</small>
+              </component>
+            </div>
+          </section>
+        </div>
+
+        <section id="guestbook-card" class="guestbook-panel animate-on-scroll" data-animation-delay="320ms" data-enter="up" aria-labelledby="guestbook-title">
           <div class="guestbook-copy">
+            <p class="section-kicker">Guestbook</p>
             <h2 id="guestbook-title">{{ guestbookCopy.title }}</h2>
             <p>{{ guestbookCopy.description }}</p>
             <div class="guestbook-image">
@@ -177,7 +180,7 @@
 
             <div class="guestbook-actions">
               <button class="guestbook-submit" type="submit" :disabled="isSubmitting">
-                {{ isSubmitting ? '发送中...' : guestbookCopy.submit }}
+                {{ isSubmitting ? '鍙戦€佷腑...' : guestbookCopy.submit }}
               </button>
               <p v-if="guestbookCopy.note" class="guestbook-note">{{ guestbookCopy.note }}</p>
               <p
@@ -192,9 +195,10 @@
               </p>
             </div>
           </form>
-        </div>
+        </section>
       </div>
     </div>
+
     <div class="experience-section-bottom-haze" aria-hidden="true"></div>
   </section>
 </template>
@@ -226,50 +230,23 @@ const recentScrollbar = ref({
   thumbOffset: 0
 });
 
-const heroCardGlow = ref({});
-const skillsCardGlow = ref({});
-const aboutCardGlow = ref({});
-const timelineCardGlow = ref({});
-const contactCardGlow = ref({});
-
-const cardGlowStates = {
-  'experience-title': heroCardGlow,
-  'skills-card': skillsCardGlow,
-  'about-card': aboutCardGlow,
-  'timeline-card': timelineCardGlow,
-  'contact-card': contactCardGlow
-};
-
-const handleCardMouseMove = (event) => {
-  const card = event.currentTarget;
-  const rect = card.getBoundingClientRect();
-  const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
-  const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
-  const intensity = Math.sqrt(x * x + y * y);
-  const normalizedIntensity = Math.min(intensity, 1);
-
-  const glowStyle = {
-    opacity: 0.6 + normalizedIntensity * 0.4,
-    transform: `translate(${x * 30}px, ${y * 30}px)`,
-    background: `radial-gradient(circle at 50% 50%, rgba(64, 223, 255, ${0.12 + normalizedIntensity * 0.08}) 0%, rgba(64, 223, 255, 0) 60%)`
-  };
-
-  const cardId = card.id || card.classList.contains('timeline-card') ? 'timeline-card' : null;
-  if (cardId && cardGlowStates[cardId]) {
-    cardGlowStates[cardId].value = glowStyle;
+const experienceStats = computed(() => ([
+  {
+    label: 'Tool Stack',
+    value: String(skillItems.length).padStart(2, '0')
+  },
+  {
+    label: 'Recent Notes',
+    value: String(recentItems.length).padStart(2, '0')
+  },
+  {
+    label: 'Links',
+    value: String(contactLinkItems.length).padStart(2, '0')
   }
-};
+]));
 
-const handleCardMouseLeave = (event) => {
-  const card = event.currentTarget;
-  const cardId = card.id || card.classList.contains('timeline-card') ? 'timeline-card' : null;
-  if (cardId && cardGlowStates[cardId]) {
-    cardGlowStates[cardId].value = {
-      opacity: 0,
-      transform: 'translate(0, 0)'
-    };
-  }
-};
+const marqueeSkills = computed(() => [...skillItems, ...skillItems]);
+const marqueeSkillsReverse = computed(() => [...skillItems].reverse().concat([...skillItems].reverse()));
 
 const recentScrollbarThumbStyle = computed(() => ({
   height: `${recentScrollbar.value.thumbHeight}px`,
@@ -277,6 +254,7 @@ const recentScrollbarThumbStyle = computed(() => ({
 }));
 
 let recentScrollbarTimer = 0;
+let animationObserver = null;
 
 const updateRecentScrollbar = () => {
   const element = recentListRef.value;
@@ -317,7 +295,7 @@ const showRecentScrollbar = () => {
 
   recentScrollbarTimer = window.setTimeout(() => {
     recentScrollbarVisible.value = false;
-  }, 2000);
+  }, 1600);
 };
 
 const handleRecentScroll = () => {
@@ -326,9 +304,7 @@ const handleRecentScroll = () => {
 };
 
 const isHttpLink = (href) => /^https?:\/\//i.test(href || '');
-
 const getContactTarget = (href) => (isHttpLink(href) ? '_blank' : undefined);
-
 const getContactRel = (href) => (isHttpLink(href) ? 'noopener noreferrer' : undefined);
 
 const submitGuestbook = async () => {
@@ -337,13 +313,13 @@ const submitGuestbook = async () => {
 
   if (!email || !message) {
     guestbookStatusType.value = 'error';
-    guestbookStatus.value = '请先填写邮箱和留言内容。';
+    guestbookStatus.value = '璇峰厛濉啓閭鍜岀暀瑷€鍐呭銆?';
     return;
   }
 
   isSubmitting.value = true;
   guestbookStatusType.value = '';
-  guestbookStatus.value = '正在发送留言...';
+  guestbookStatus.value = '姝ｅ湪鍙戦€佺暀瑷€...';
 
   try {
     const response = await fetch('/api/guestbook', {
@@ -361,26 +337,21 @@ const submitGuestbook = async () => {
 
     if (!response.ok || !result.ok) {
       guestbookStatusType.value = 'error';
-      guestbookStatus.value = result.message || '发送失败，请稍后再试。';
+      guestbookStatus.value = result.message || '鍙戦€佸け璐ワ紝璇风◢鍚庡啀璇曘€?';
       return;
     }
 
     guestbookStatusType.value = 'success';
-    guestbookStatus.value = result.message || '留言已经发送成功。';
+    guestbookStatus.value = result.message || '鐣欒█宸茬粡鍙戦€佹垚鍔熴€?';
     guestbookForm.value.email = '';
     guestbookForm.value.message = '';
   } catch (error) {
     guestbookStatusType.value = 'error';
-    guestbookStatus.value = error instanceof Error ? error.message : '发送失败，请稍后再试。';
+    guestbookStatus.value = error instanceof Error ? error.message : '鍙戦€佸け璐ワ紝璇风◢鍚庡啀璇曘€?';
   } finally {
     isSubmitting.value = false;
   }
 };
-const handleWindowResize = () => {
-  updateRecentScrollbar();
-};
-
-let animationObserver = null;
 
 const initScrollAnimations = () => {
   const elements = document.querySelectorAll('.animate-on-scroll');
@@ -388,16 +359,16 @@ const initScrollAnimations = () => {
 
   animationObserver = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        const delay = entry.target.getAttribute('data-animation-delay') || '0ms';
-        entry.target.style.animationDelay = delay;
-        entry.target.classList.add('animate-in');
-        animationObserver?.unobserve(entry.target);
-      }
+      if (!entry.isIntersecting) return;
+
+      const delay = entry.target.getAttribute('data-animation-delay') || '0ms';
+      entry.target.style.setProperty('--enter-delay', delay);
+      entry.target.classList.add('animate-in');
+      animationObserver?.unobserve(entry.target);
     });
   }, {
-    rootMargin: '0px 0px -12% 0px',
-    threshold: 0.1
+    rootMargin: '0px 0px -10% 0px',
+    threshold: 0.12
   });
 
   elements.forEach((el) => animationObserver?.observe(el));
@@ -405,52 +376,34 @@ const initScrollAnimations = () => {
 
 onMounted(() => {
   updateRecentScrollbar();
-  window.addEventListener('resize', handleWindowResize);
   initScrollAnimations();
+  window.addEventListener('resize', updateRecentScrollbar);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleWindowResize);
   clearTimeout(recentScrollbarTimer);
   animationObserver?.disconnect();
+  window.removeEventListener('resize', updateRecentScrollbar);
 });
 </script>
 
 <style scoped>
 .experience-section {
-  --accent-blue: #40dfff;
-  --accent-ice: #dff9ff;
-  --accent-lime: #ecf78e;
-  --ink-strong: #12324a;
-  --ink-soft: rgba(18, 50, 74, 0.72);
-  --radius-card: 14px;
-  --radius-button: 999px;
+  --accent-blue: #76c7d7;
+  --accent-gold: #d3cb9a;
+  --ink-strong: #142c3f;
+  --ink-soft: rgba(20, 44, 63, 0.72);
   position: relative;
   min-height: 100svh;
-  padding: 6rem 1.25rem 4.8rem;
+  padding: 5.8rem 1.5rem 5.4rem;
   overflow-x: hidden;
-  overflow-y: visible;
   color: var(--ink-strong);
-  font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Outfit', 'Noto Sans SC', 'Segoe UI', sans-serif;
   background:
-    radial-gradient(circle at 16% 18%, rgba(64, 223, 255, 0.18), transparent 25%),
-    radial-gradient(circle at 86% 12%, rgba(236, 247, 142, 0.16), transparent 22%),
-    radial-gradient(circle at 50% 48%, rgba(223, 249, 255, 0.55), transparent 36%),
-    radial-gradient(circle at 50% 92%, rgba(18, 62, 90, 0.5), transparent 38%),
-    linear-gradient(
-      180deg,
-      rgba(2, 7, 12, 0) 0%,
-      rgba(3, 10, 18, 0.92) 8%,
-      rgba(10, 28, 44, 0.68) 18%,
-      rgba(45, 92, 120, 0.32) 31%,
-      rgba(220, 246, 252, 0.96) 54%,
-      rgba(240, 250, 253, 0.98) 72%,
-      rgba(210, 236, 246, 0.92) 82%,
-      rgba(158, 212, 230, 0.7) 90%,
-      rgba(90, 168, 200, 0.4) 96%,
-      rgba(30, 88, 120, 0.2) 100%
-    ),
-    repeating-linear-gradient(90deg, rgba(24, 70, 101, 0.03) 0 1px, transparent 1px 86px);
+    linear-gradient(180deg, rgba(3, 8, 14, 0.98) 0%, rgba(8, 18, 28, 0.82) 11%, rgba(213, 228, 236, 0.28) 25%, rgba(244, 247, 248, 0.98) 43%, rgba(247, 249, 250, 0.98) 60%, rgba(221, 232, 238, 0.84) 79%, rgba(33, 58, 76, 0.42) 93%, rgba(7, 15, 23, 0.94) 100%),
+    radial-gradient(circle at 14% 24%, rgba(118, 199, 215, 0.14), transparent 24%),
+    radial-gradient(circle at 84% 18%, rgba(211, 203, 154, 0.12), transparent 22%),
+    repeating-linear-gradient(90deg, rgba(19, 58, 82, 0.03) 0 1px, transparent 1px 118px);
 }
 
 .experience-section::before {
@@ -458,10 +411,10 @@ onBeforeUnmount(() => {
   inset: 0;
   content: '';
   background-image:
-    linear-gradient(180deg, rgba(38, 97, 133, 0.08) 0 1px, transparent 1px 100%),
-    linear-gradient(90deg, rgba(38, 97, 133, 0.05) 0 1px, transparent 1px 100%);
-  background-size: 56px 56px;
-  opacity: 0.26;
+    linear-gradient(180deg, rgba(32, 76, 104, 0.05) 0 1px, transparent 1px 100%),
+    linear-gradient(90deg, rgba(32, 76, 104, 0.03) 0 1px, transparent 1px 100%);
+  background-size: 72px 72px;
+  opacity: 0.2;
   pointer-events: none;
 }
 
@@ -471,57 +424,48 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 18rem;
   content: '';
-  background:
-    linear-gradient(180deg, rgba(2, 7, 12, 0.94) 0%, rgba(4, 12, 22, 0.68) 34%, rgba(19, 42, 62, 0.2) 68%, transparent 100%);
+  background: linear-gradient(180deg, rgba(3, 8, 14, 0.98) 0%, rgba(8, 16, 24, 0.4) 42%, transparent 100%);
   pointer-events: none;
 }
 
 .experience-section-bottom-haze {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 40vh;
-  min-height: 17rem;
+  inset: auto 0 0;
+  height: 42vh;
+  min-height: 18rem;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 50% 100%, rgba(14, 52, 78, 0.62) 0%, rgba(9, 34, 52, 0.44) 24%, rgba(5, 22, 36, 0.24) 50%, transparent 76%),
-    linear-gradient(
-      180deg,
-      transparent 0%,
-      rgba(16, 58, 84, 0.14) 22%,
-      rgba(10, 40, 62, 0.32) 46%,
-      rgba(6, 24, 40, 0.58) 68%,
-      rgba(3, 14, 26, 0.78) 84%,
-      rgba(2, 8, 14, 0.94) 100%
-    );
-  z-index: 2;
-  filter: blur(5px);
+    radial-gradient(ellipse at 50% 100%, rgba(10, 28, 40, 0.62) 0%, rgba(10, 28, 40, 0.24) 36%, transparent 78%),
+    linear-gradient(180deg, transparent 0%, rgba(10, 32, 48, 0.12) 22%, rgba(7, 24, 38, 0.46) 66%, rgba(4, 12, 22, 0.92) 100%);
+  filter: blur(10px);
 }
 
 .experience-shell {
   position: relative;
   z-index: 1;
-  width: min(100%, 1160px);
+  width: min(100%, 1220px);
   margin: 0 auto;
 }
 
 .experience-nav {
+  position: sticky;
+  top: 1rem;
+  z-index: 12;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 4.25rem;
-  margin-bottom: 1.45rem;
-  padding: 0.82rem 1.15rem 0.82rem 1.45rem;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: var(--radius-card);
+  gap: 1rem;
+  margin-bottom: 2.4rem;
+  padding: 0.92rem 1.28rem 0.92rem 1.46rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(226, 246, 252, 0.48)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.08));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(237, 243, 245, 0.34)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent);
   box-shadow:
-    0 16px 40px rgba(7, 24, 38, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(22px) saturate(1.12);
+    0 18px 48px rgba(8, 24, 36, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.66);
+  backdrop-filter: blur(18px) saturate(1.08);
 }
 
 .brand-mark,
@@ -531,182 +475,111 @@ onBeforeUnmount(() => {
 }
 
 .brand-mark {
-  font-size: 1.08rem;
+  flex: 0 0 auto;
+  font-size: 1rem;
   font-weight: 900;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-.brand-mark span,
-.nav-links a:first-child {
+.brand-mark span {
   color: var(--accent-blue);
 }
 
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.82rem;
+  justify-content: flex-end;
+  gap: 0.38rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
   font-weight: 800;
 }
 
 .nav-links a {
-  padding: 0.58rem 0.78rem;
+  padding: 0.62rem 0.88rem;
   border-radius: 999px;
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.28s ease, color 0.28s ease, transform 0.28s ease;
 }
 
 .nav-links a:hover {
-  background: rgba(64, 223, 255, 0.12);
-  color: #1d4562;
+  background: rgba(118, 199, 215, 0.1);
+  color: #17324a;
   transform: translateY(-1px);
 }
 
 .nav-links .nav-plate-link {
-  margin-left: 0.28rem;
-  color: #031827;
-  background: linear-gradient(135deg, #92f8ff 0%, #e9f585 100%);
+  color: #102837;
+  background: linear-gradient(135deg, rgba(118, 199, 215, 0.96), rgba(211, 203, 154, 0.94));
   box-shadow:
-    0 12px 30px rgba(36, 183, 207, 0.24),
+    0 12px 28px rgba(118, 199, 215, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
   white-space: nowrap;
 }
 
 .nav-links .nav-plate-link:hover {
-  color: #03131f;
-  background: linear-gradient(135deg, #6ff4ff 0%, #ffe08f 100%);
-  transform: translateY(-2px);
+  color: #0d202c;
+  background: linear-gradient(135deg, rgba(118, 199, 215, 1), rgba(218, 210, 160, 1));
 }
 
-.experience-grid {
-  position: relative;
+.experience-stage {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: auto auto auto;
-  grid-auto-rows: minmax(0, auto);
-  gap: 1rem;
-  align-items: stretch;
+  gap: 3.8rem;
 }
 
-.experience-grid::before {
-  position: absolute;
-  inset: -0.7rem 14% auto auto;
-  width: 12rem;
-  height: 12rem;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(247, 238, 173, 0.42) 0%, rgba(247, 238, 173, 0) 72%);
-  content: '';
-  pointer-events: none;
-  filter: blur(10px);
-}
-
-.experience-card {
-  position: relative;
-  overflow: hidden;
-  min-height: 7rem;
-  padding: 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: var(--radius-card);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(229, 246, 252, 0.62)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
-  box-shadow:
-    0 12px 32px rgba(48, 88, 116, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(22px) saturate(1.12);
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
-}
-
-.experience-card:hover {
-  border-color: rgba(177, 244, 255, 0.5);
-  box-shadow:
-    0 20px 48px rgba(48, 88, 116, 0.12),
-    0 0 24px rgba(64, 223, 255, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.88);
-  transform: translateY(-3px);
-}
-
-.experience-card::after {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.28), transparent 38%, transparent 72%, rgba(64, 223, 255, 0.08));
-  content: '';
-  pointer-events: none;
-}
-
-.card-glow {
-  position: absolute;
-  inset: -50%;
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
-
-.experience-card h2,
-.experience-card h3,
-.experience-card p {
-  position: relative;
-  z-index: 1;
+.section-kicker,
+.panel-heading h3,
+.panel-heading p,
+.profile-copy p,
+.intro-copy p,
+.contact-panel p,
+.guestbook-copy p {
   margin: 0;
 }
 
-.skill-tag {
-  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.skill-tag:hover {
-  transform: translateY(-2px) scale(1.05);
-  background-color: rgba(64, 223, 255, 0.2);
-  box-shadow: 0 6px 20px rgba(64, 223, 255, 0.15);
-}
-
-.hero-card {
-  grid-column: 1 / span 7;
-  grid-row: 1;
-  display: grid;
-  align-content: start;
-  gap: 0.8rem;
-  min-height: 9.4rem;
-  padding-right: 5.6rem;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(226, 246, 252, 0.62)),
-    radial-gradient(circle at 88% 18%, rgba(236, 247, 142, 0.34), transparent 20%);
-}
-
-.hero-card::before {
-  position: absolute;
-  top: -2.2rem;
-  right: -2.3rem;
-  width: 8.8rem;
-  height: 8.8rem;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(236, 247, 142, 0.72) 0%, rgba(142, 238, 255, 0.24) 48%, rgba(255, 255, 255, 0) 72%);
-  content: '';
-  filter: blur(6px);
-}
-
-.hero-card h2 {
-  color: #173750;
-  font-size: clamp(2rem, 3vw, 2.68rem);
+.section-kicker {
+  color: rgba(26, 94, 124, 0.82);
+  font-size: 0.76rem;
   font-weight: 900;
-  line-height: 1.02;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
-.hero-card h2 span {
-  color: var(--accent-blue);
+.intro-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.86fr);
+  gap: 3rem;
+  align-items: center;
+  min-height: 70svh;
+  padding: 0 0 1rem;
+}
+
+.intro-copy {
+  display: grid;
+  gap: 1.2rem;
+  align-content: start;
+}
+
+.intro-copy h2 {
+  margin: 0;
+  max-width: 9ch;
+  color: #152d40;
+  font-size: clamp(3.2rem, 6vw, 6.2rem);
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: -0.05em;
 }
 
 .hero-summary {
-  max-width: 35rem;
+  max-width: 34rem;
   color: var(--ink-soft);
-  font-size: 0.94rem;
+  font-size: 1.02rem;
   font-weight: 700;
-  line-height: 1.72;
+  line-height: 1.86;
 }
 
 .hero-summary-link {
-  color: var(--accent-blue);
+  color: #1b89a8;
   font-weight: 900;
   text-decoration: none;
 }
@@ -715,97 +588,136 @@ onBeforeUnmount(() => {
   text-decoration: underline;
 }
 
-.blue-dot {
+.intro-side {
+  display: grid;
+  gap: 2rem;
+  justify-items: center;
+}
+
+.breathing-loader {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 22rem);
+  aspect-ratio: 1 / 1;
+}
+
+.loader-core,
+.loader-ring,
+.loader-line {
   position: absolute;
-  top: 1.2rem;
-  right: 1.35rem;
-  width: 2.9rem;
-  height: 2.9rem;
+  inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff, #ecf78e 36%, #7feeff 72%, #55d8ff 100%);
+}
+
+.loader-core {
+  inset: 25%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.92) 0%, rgba(235, 242, 245, 0.72) 48%, rgba(118, 199, 215, 0.08) 100%);
   box-shadow:
-    0 0 24px rgba(64, 223, 255, 0.28),
-    0 0 36px rgba(236, 247, 142, 0.22);
+    0 24px 48px rgba(28, 64, 86, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  animation: breathe-core 5.8s ease-in-out infinite;
 }
 
-.skills-card {
-  grid-column: 8 / span 5;
-  grid-row: 1;
-  display: grid;
-  align-content: start;
-  gap: 0.8rem;
-  min-height: 9.4rem;
+.loader-ring {
+  border: 1px solid rgba(22, 70, 96, 0.12);
 }
 
-.skills-card h3,
-.timeline-card h3,
-.contact-card h3 {
-  color: #173750;
-  font-size: 1.18rem;
-  font-weight: 900;
+.loader-ring-a {
+  inset: 10%;
+  animation: breathe-ring 6.4s ease-in-out infinite;
 }
 
-.skills-note,
-.contact-text,
-.recent-item p,
-.profile-text {
-  color: var(--ink-soft);
-  font-size: 0.92rem;
-  font-weight: 700;
-  line-height: 1.62;
+.loader-ring-b {
+  inset: 0;
+  border-color: rgba(22, 70, 96, 0.08);
+  animation: breathe-ring 6.4s ease-in-out infinite reverse;
 }
 
-.skill-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.58rem;
-}
-
-.skill-list span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.18rem;
-  padding: 0 0.86rem;
-  border: 1px solid rgba(112, 178, 207, 0.16);
+.loader-line {
+  inset: 6% 50%;
+  width: 1px;
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(238, 249, 252, 0.52));
-  color: #1d4c68;
-  font-size: 0.82rem;
-  font-weight: 800;
-  box-shadow:
-    0 10px 22px rgba(53, 96, 125, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  animation: skill-float 4.8s ease-in-out infinite;
-  animation-delay: var(--float-delay, 0s);
-  backface-visibility: hidden;
-  contain: paint;
-  transform: translateZ(0);
-  will-change: transform;
+  background: linear-gradient(180deg, rgba(118, 199, 215, 0), rgba(118, 199, 215, 0.62), rgba(118, 199, 215, 0));
+  animation: loader-scan 5.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
 
-.profile-card {
-  grid-column: 1 / span 4;
-  grid-row: 2 / span 2;
+.loader-label {
+  position: relative;
+  z-index: 1;
+  color: rgba(20, 44, 63, 0.68);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.intro-metrics {
   display: grid;
-  align-content: start;
+  width: min(100%, 24rem);
+  gap: 0.7rem;
+}
+
+.intro-metric {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 1rem;
-  min-height: 25.6rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(18, 54, 78, 0.12);
+}
+
+.intro-metric:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.intro-metric-value {
+  color: #142c3f;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.intro-metric-label {
+  color: rgba(20, 44, 63, 0.62);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.profile-panel {
+  display: grid;
+  grid-template-columns: minmax(18rem, 23rem) minmax(0, 1fr);
+  gap: 4rem;
+  align-items: center;
+  padding: 1rem 0;
 }
 
 .profile-picture-frame {
+  position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1.02;
-  padding: 0.45rem;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: var(--radius-card);
+  aspect-ratio: 1 / 1.06;
+  padding: 0.52rem;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 24px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(226, 247, 253, 0.62));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(234, 242, 245, 0.66)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent);
   box-shadow:
-    0 16px 34px rgba(51, 92, 121, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.82);
-  transform: rotate(-1.6deg);
+    0 24px 56px rgba(28, 64, 86, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.profile-picture-frame::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.66);
+  pointer-events: none;
 }
 
 .profile-picture-frame picture,
@@ -819,29 +731,109 @@ onBeforeUnmount(() => {
 
 .profile-picture-frame img,
 .guestbook-image img {
+  border-radius: 18px;
   object-fit: cover;
   object-position: 58% center;
-  border-radius: 6px;
 }
 
 .profile-copy {
   display: grid;
-  gap: 0.55rem;
+  gap: 1rem;
 }
 
 .profile-role {
-  color: #173750;
-  font-size: 1.06rem;
+  color: #142c3f;
+  font-size: clamp(1.5rem, 2vw, 2rem);
   font-weight: 900;
+  line-height: 1.08;
 }
 
-.timeline-card {
-  grid-column: 5 / span 4;
-  grid-row: 2 / span 2;
+.profile-text,
+.skills-note,
+.contact-text,
+.guestbook-copy p,
+.guestbook-note,
+.guestbook-status,
+.recent-item p {
+  color: var(--ink-soft);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.82;
+}
+
+.skills-panel {
   display: grid;
-  align-content: start;
-  gap: 1rem;
-  min-height: 25.6rem;
+  gap: 1.6rem;
+  padding: 1.1rem 0;
+}
+
+.panel-heading {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.panel-heading h3,
+.guestbook-copy h2 {
+  margin: 0;
+  color: #142c3f;
+  font-size: clamp(1.65rem, 2vw, 2.25rem);
+  font-weight: 900;
+  line-height: 1.04;
+}
+
+.skill-marquee-shell {
+  display: grid;
+  gap: 0.9rem;
+  overflow: hidden;
+}
+
+.skill-track {
+  display: inline-flex;
+  width: max-content;
+  min-width: 100%;
+  gap: 0.88rem;
+}
+
+.skill-track-forward {
+  animation: marquee-forward 24s linear infinite;
+}
+
+.skill-track-reverse {
+  animation: marquee-reverse 28s linear infinite;
+}
+
+.skill-marquee-shell:hover .skill-track {
+  animation-play-state: paused;
+}
+
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.85rem;
+  padding: 0 1.12rem;
+  border: 1px solid rgba(27, 90, 120, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.52);
+  color: #1a4662;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 12px 24px rgba(26, 64, 88, 0.04);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.78fr);
+  gap: 3rem;
+  align-items: start;
+}
+
+.timeline-panel,
+.contact-panel {
+  display: grid;
+  gap: 1.4rem;
 }
 
 .recent-list-shell {
@@ -850,24 +842,19 @@ onBeforeUnmount(() => {
 
 .recent-list-shell::before {
   position: absolute;
-  top: 0;
-  left: 0.77rem;
+  inset: 0 auto 0 0.82rem;
   width: 1px;
-  height: 100%;
-  background: linear-gradient(180deg, rgba(64, 223, 255, 0.4), rgba(64, 223, 255, 0.12) 60%, rgba(64, 223, 255, 0));
   content: '';
+  background: linear-gradient(180deg, rgba(118, 199, 215, 0.34), rgba(118, 199, 215, 0.08) 78%, rgba(118, 199, 215, 0));
   pointer-events: none;
 }
 
 .recent-list {
-  position: relative;
-  z-index: 1;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.78rem;
-  max-height: 24.7rem;
+  gap: 1.35rem;
+  max-height: 30rem;
   margin: 0;
-  padding: 0 0.2rem 0 0;
+  padding: 0 0.75rem 0 0;
   overflow-y: auto;
   overflow-x: hidden;
   list-style: none;
@@ -875,52 +862,47 @@ onBeforeUnmount(() => {
   -ms-overflow-style: none;
 }
 
-.recent-item {
-  position: relative;
-  display: grid;
-  gap: 0.35rem;
-  min-height: 7.25rem;
-  padding: 0.84rem 0.92rem 0.84rem 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: var(--radius-card);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.65), rgba(231, 247, 252, 0.48));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 8px 18px rgba(54, 94, 121, 0.06);
-}
-
-.recent-item::before {
-  position: absolute;
-  top: 0.84rem;
-  left: 0.55rem;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-blue), #8cf0ff);
-  box-shadow: 0 0 8px rgba(64, 223, 255, 0.4);
-  content: '';
-}
-
-.recent-year {
-  color: #1584a4;
-  font-size: 0.74rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
 .recent-list::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
+.recent-item {
+  position: relative;
+  display: grid;
+  gap: 0.42rem;
+  padding-left: 2rem;
+}
+
+.recent-item::before {
+  position: absolute;
+  top: 0.52rem;
+  left: 0.63rem;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-blue), #a1dde7);
+  box-shadow: 0 0 0 0.34rem rgba(118, 199, 215, 0.08);
+  content: '';
+}
+
+.recent-item + .recent-item {
+  padding-top: 1.18rem;
+  border-top: 1px solid rgba(20, 54, 76, 0.08);
+}
+
+.recent-year {
+  color: #1d88a4;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
 .recent-scrollbar {
   position: absolute;
-  top: 0;
-  right: 0.05rem;
-  width: 0.35rem;
-  height: 100%;
+  inset: 0 0 0 auto;
+  width: 0.3rem;
   opacity: 0;
   transition: opacity 0.24s ease;
   pointer-events: none;
@@ -934,7 +916,7 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.12);
   content: '';
 }
 
@@ -942,132 +924,102 @@ onBeforeUnmount(() => {
   position: absolute;
   left: 0;
   width: 100%;
-  min-height: 2.25rem;
+  min-height: 2.2rem;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(64, 223, 255, 0.86), rgba(247, 238, 173, 0.92));
-  box-shadow:
-    0 0 14px rgba(64, 223, 255, 0.24),
-    0 0 12px rgba(247, 238, 173, 0.2);
-}
-
-.contact-card {
-  grid-column: 9 / span 4;
-  grid-row: 2 / span 2;
-  display: grid;
-  align-content: start;
-  gap: 1rem;
-  min-height: 25.6rem;
+  background: linear-gradient(180deg, rgba(118, 199, 215, 0.92), rgba(211, 203, 154, 0.92));
+  box-shadow: 0 0 12px rgba(118, 199, 215, 0.2);
 }
 
 .contact-links {
   display: grid;
-  gap: 0.85rem;
-  margin-top: auto;
+  gap: 1rem;
+  margin-top: 0.3rem;
 }
 
 .contact-link {
-  position: relative;
-  z-index: 1;
   display: grid;
-  gap: 0.15rem;
-  align-items: start;
-  min-height: 4rem;
-  padding: 0.92rem 1rem;
-  border: 1px solid rgba(112, 178, 207, 0.15);
-  border-radius: var(--radius-card);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(232, 248, 253, 0.58));
+  gap: 0.22rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(20, 54, 76, 0.1);
   color: #173f5b;
   text-decoration: none;
-  box-shadow:
-    0 8px 20px rgba(52, 91, 119, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  transition: transform 0.24s ease, color 0.24s ease;
+}
+
+.contact-link:first-child {
+  padding-top: 0;
+  border-top: 0;
 }
 
 .contact-link:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 28px rgba(83, 123, 151, 0.14);
+  transform: translateX(4px);
+  color: #103248;
 }
 
 .contact-link strong {
-  font-size: 0.92rem;
+  font-size: 0.96rem;
   font-weight: 900;
 }
 
 .contact-link small {
   color: rgba(35, 67, 92, 0.7);
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  line-height: 1.45;
+  line-height: 1.58;
   word-break: break-all;
 }
 
-.guestbook-section {
-  position: relative;
-  margin-top: 4rem;
-  margin-bottom: 2.1rem;
-}
-
-.guestbook-card {
+.guestbook-panel {
   display: grid;
-  grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
-  gap: 1.15rem;
-  padding: 1.15rem;
-  align-items: start;
+  grid-template-columns: minmax(16rem, 21rem) minmax(0, 1fr);
+  gap: 2.4rem;
+  padding: 1.6rem 1.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(234, 242, 245, 0.62)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent);
+  box-shadow:
+    0 26px 54px rgba(18, 48, 66, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
 
 .guestbook-copy {
   display: grid;
+  gap: 0.72rem;
   align-content: start;
-  gap: 0.55rem;
-  justify-items: start;
 }
 
 .guestbook-image {
-  width: 100%;
-  max-width: 15.5rem;
+  width: min(100%, 16rem);
   aspect-ratio: 1 / 1;
   margin-top: 0.15rem;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: var(--radius-card);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
   background: rgba(255, 255, 255, 0.5);
   box-shadow:
-    0 12px 26px rgba(52, 91, 119, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
-.guestbook-copy h2 {
-  color: #173750;
-  font-size: clamp(1.28rem, 2.2vw, 1.68rem);
-  line-height: 1.06;
-}
-
-.guestbook-copy p,
-.guestbook-note,
-.guestbook-status {
-  color: rgba(35, 67, 92, 0.82);
-  font-size: 0.92rem;
-  font-weight: 700;
-  line-height: 1.62;
+    0 16px 34px rgba(24, 55, 76, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
 
 .guestbook-form {
   display: grid;
-  gap: 0.75rem;
-  width: min(100%, 45rem);
+  gap: 1rem;
+  width: min(100%, 48rem);
   justify-self: end;
 }
 
 .guestbook-field {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.45rem;
 }
 
 .guestbook-field span {
   color: #295570;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .guestbook-field input,
@@ -1076,51 +1028,62 @@ onBeforeUnmount(() => {
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  padding: 0.78rem 0.95rem;
-  border: 1px solid rgba(112, 178, 207, 0.18);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.68);
+  padding: 0.92rem 1rem;
+  border: 1px solid rgba(112, 178, 207, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
   color: #224966;
   font: inherit;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  transition: border-color 0.24s ease, box-shadow 0.24s ease, background-color 0.24s ease;
 }
 
 .guestbook-field textarea {
-  min-height: 5.4rem;
+  min-height: 8rem;
   resize: vertical;
 }
 
 .guestbook-field input:focus,
 .guestbook-field textarea:focus {
-  border-color: rgba(64, 223, 255, 0.48);
-  box-shadow: 0 0 0 4px rgba(64, 223, 255, 0.12);
-  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(118, 199, 215, 0.4);
+  box-shadow: 0 0 0 4px rgba(118, 199, 215, 0.12);
+  background: rgba(255, 255, 255, 0.86);
 }
 
 .guestbook-actions {
   display: grid;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 
 .guestbook-submit {
   justify-self: start;
-  min-height: 2.55rem;
-  padding: 0 1rem;
+  min-height: 2.9rem;
+  padding: 0 1.16rem;
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(135deg, #40dfff, #92f8ff 52%, #ecf78e 100%);
+  background: linear-gradient(135deg, rgba(118, 199, 215, 0.96), rgba(211, 203, 154, 0.96));
   color: #16384f;
   font: inherit;
   font-weight: 900;
   cursor: pointer;
   box-shadow:
-    0 14px 30px rgba(64, 171, 207, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.68);
+    0 14px 30px rgba(118, 199, 215, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .guestbook-submit:hover {
   transform: translateY(-1px);
+}
+
+.guestbook-submit:active {
+  transform: translateY(0);
+}
+
+.guestbook-submit:disabled {
+  opacity: 0.72;
+  cursor: wait;
+  transform: none;
 }
 
 .guestbook-status {
@@ -1135,61 +1098,146 @@ onBeforeUnmount(() => {
   color: #b65454;
 }
 
-.guestbook-submit:disabled {
-  opacity: 0.72;
-  cursor: wait;
-  transform: none;
+.animate-on-scroll {
+  --enter-delay: 0ms;
+  opacity: 0;
+  filter: blur(10px);
+  transform: translate3d(0, 28px, 0) scale(0.988);
+  transition:
+    opacity 0.76s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.82s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.76s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--enter-delay);
 }
 
-@keyframes skill-float {
+.animate-on-scroll[data-enter='left'] {
+  transform: translate3d(-48px, 18px, 0) scale(0.988);
+}
+
+.animate-on-scroll[data-enter='right'] {
+  transform: translate3d(48px, 18px, 0) scale(0.988);
+}
+
+.animate-on-scroll.animate-in {
+  opacity: 1;
+  filter: blur(0);
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+@keyframes breathe-core {
   0%,
   100% {
-    transform: translate3d(0, 0, 0);
+    transform: scale(0.92);
+    opacity: 0.92;
   }
 
   50% {
-    transform: translate3d(0, -0.35rem, 0);
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes breathe-ring {
+  0%,
+  100% {
+    transform: scale(0.96);
+    opacity: 0.34;
+  }
+
+  50% {
+    transform: scale(1.04);
+    opacity: 0.72;
+  }
+}
+
+@keyframes loader-scan {
+  0% {
+    transform: translateY(-32%);
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 0.72;
+  }
+
+  50% {
+    transform: translateY(32%);
+    opacity: 0.82;
+  }
+
+  100% {
+    transform: translateY(40%);
+    opacity: 0;
+  }
+}
+
+@keyframes marquee-forward {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes marquee-reverse {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (max-width: 1080px) {
+  .intro-panel,
+  .profile-panel,
+  .detail-grid,
+  .guestbook-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .intro-copy h2 {
+    max-width: none;
+  }
+
+  .intro-side {
+    justify-items: start;
+  }
+
+  .guestbook-form {
+    width: 100%;
+    justify-self: stretch;
   }
 }
 
 @media (max-width: 900px) {
-  .experience-shell {
-    width: min(100%, 900px);
+  .experience-section {
+    padding-inline: 1rem;
   }
 
-  .experience-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
+  .experience-nav {
+    position: relative;
+    top: 0;
+    border-radius: 22px;
   }
 
-  .hero-card,
-  .skills-card,
-  .profile-card,
-  .timeline-card,
-  .contact-card {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .profile-card,
-  .timeline-card {
-    min-height: auto;
+  .experience-stage {
+    gap: 2.4rem;
   }
 }
 
 @media (max-width: 768px) {
   .experience-section {
-    padding: 3rem 0.9rem 2.7rem;
-  }
-
-  .experience-shell {
-    width: min(100%, 34rem);
+    padding: 3rem 0.9rem 3rem;
   }
 
   .experience-nav {
     justify-content: center;
-    min-height: auto;
-    padding: 0.75rem;
+    margin-bottom: 1.4rem;
+    padding: 0.8rem;
   }
 
   .brand-mark {
@@ -1198,150 +1246,35 @@ onBeforeUnmount(() => {
 
   .nav-links {
     width: 100%;
+    justify-content: center;
+  }
+
+  .intro-panel {
+    min-height: auto;
+  }
+
+  .intro-copy h2 {
+    font-size: clamp(2.6rem, 11vw, 4rem);
+  }
+
+  .skill-chip {
+    min-height: 2.55rem;
+  }
+}
+
+@media (max-width: 540px) {
+  .nav-links {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(4.8rem, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.45rem;
-    font-size: 0.76rem;
   }
 
   .nav-links a {
-    display: grid;
-    min-height: 2.35rem;
-    place-items: center;
-    padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.28);
+    justify-content: center;
   }
 
   .nav-links .nav-plate-link {
     grid-column: 1 / -1;
-    min-height: 2.55rem;
-    padding: 0 0.8rem;
-    white-space: normal;
-  }
-
-  .experience-grid {
-    gap: 0.85rem;
-  }
-
-  .experience-card,
-  .hero-card,
-  .profile-card,
-  .skills-card,
-  .timeline-card,
-  .contact-card {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .experience-card {
-    min-height: auto;
-    padding: 1.05rem 1rem;
-  }
-
-  .hero-card {
-    padding-right: 1rem;
-    text-align: center;
-  }
-
-  .hero-summary {
-    max-width: none;
-  }
-
-  .contact-links {
-    justify-content: center;
-  }
-
-  .profile-card,
-  .timeline-card,
-  .contact-card {
-    min-height: auto;
-  }
-
-  .profile-picture-frame {
-    width: min(82%, 14rem);
-    margin: 0 auto;
-  }
-
-  .profile-copy,
-  .skills-card,
-  .timeline-card,
-  .contact-card {
-    text-align: center;
-  }
-
-  .skill-list {
-    justify-content: center;
-  }
-
-  .recent-item {
-    text-align: left;
-  }
-
-  .guestbook-card {
-    grid-template-columns: 1fr;
-  }
-
-  .guestbook-image {
-    margin-inline: auto;
-  }
-
-  .guestbook-form {
-    width: 100%;
-    justify-self: stretch;
-  }
-
-  .guestbook-submit {
-    justify-self: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .experience-section {
-    padding-top: 2.65rem;
-  }
-
-  .nav-links {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .profile-card {
-    min-height: 20.5rem;
-  }
-
-  .profile-picture-frame {
-    width: min(78%, 12.5rem);
-  }
-
-  .timeline-card,
-  .contact-card {
-    gap: 0.75rem;
-  }
-
-  .guestbook-section {
-    margin-top: 0.95rem;
-  }
-}
-
-.animate-on-scroll {
-  opacity: 0;
-  transform: translateY(24px);
-}
-
-.animate-on-scroll.animate-in {
-  animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 </style>
-
-

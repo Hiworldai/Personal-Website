@@ -12,8 +12,8 @@
         <div class="center-avatar-shell">
           <div class="hero-stage-copy">
             <h1 class="hero-title" :style="heroTitleStyle">
-              <span>我是陈康鸿</span>
-              <span>Frontend / AI Application Developer</span>
+              <span>Hi!</span>
+              <span>Welcome to Chen Kanghong's Tech Blog</span>
             </h1>
           </div>
 
