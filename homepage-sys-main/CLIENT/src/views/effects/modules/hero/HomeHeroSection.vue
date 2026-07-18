@@ -2,7 +2,7 @@
   <section class="mouse-trail-scroll-stage">
     <MouseTrailEffect
       class="mouse-trail-sticky"
-      :style="fadeStyle"
+      :style="[fadeStyle, heroUiStyle]"
       :show-scroll-hint="true"
       :show-copy="true"
       :dissolve-on-scroll="false"
@@ -17,9 +17,7 @@
             </h1>
           </div>
 
-          <div class="avatar-stage">
-            <div class="stage-light-rig" aria-hidden="true"></div>
-
+          <div class="avatar-stage" :style="avatarStageStyle">
             <div
               class="center-avatar"
               :class="{ 'is-empty': avatarMissing }"
@@ -100,26 +98,33 @@ const smoothstep = (value) => value * value * (3 - 2 * value);
 
 const avatarCoinStyle = computed(() => {
   const progress = clamp(props.scrollProgress, 0, 1);
-  const motion = smoothstep(progress);
-  const fadeProgress = clamp((progress - 0.62) / 0.38, 0, 1);
-  const fade = smoothstep(fadeProgress);
+  const fadeProgress = clamp((progress - 0.68) / 0.18, 0, 1);
+  const motion = smoothstep(fadeProgress);
 
   return {
-    opacity: 1 - fade,
-    transform: [
-      `translate3d(0, ${motion * 42}vh, ${motion * 4}rem)`,
-      `rotateX(${motion * 1080}deg)`,
-      `scale(${1 - fade * 0.56})`
-    ].join(' ')
+    transform: `translate3d(0, 0, ${motion * 4}rem) rotateX(${motion * 1080}deg) scale(${1 - motion * 0.32})`
+  };
+});
+
+const avatarStageStyle = computed(() => {
+  const progress = clamp(props.scrollProgress, 0, 1);
+  const motion = smoothstep(clamp((progress - 0.68) / 0.18, 0, 1));
+
+  return {
+    opacity: 1 - motion,
+    transform: `translate3d(0, ${motion * 32}vh, 0) scale(${1 - motion * 0.18})`
   };
 });
 
 const heroTitleStyle = computed(() => {
   const { x, y } = titlePointer.value;
+  const progress = clamp(props.scrollProgress, 0, 1);
+  const exit = smoothstep(clamp((progress - 0.55) / 0.17, 0, 1));
 
   return {
+    opacity: 1 - exit,
     transform: [
-      `translate3d(${x * 18}px, ${y * 8}px, 0)`,
+      `translate3d(${x * 18}px, ${y * 8 - exit * 12}px, 0)`,
       `rotateX(${y * -2.5}deg)`,
       `rotateY(${x * 4.5}deg)`
     ].join(' '),
@@ -127,6 +132,16 @@ const heroTitleStyle = computed(() => {
       `${x * -6}px ${y * -3}px 10px rgba(255, 255, 255, 0.95)`,
       '0 0 16px rgba(168, 245, 255, 0.5)'
     ].join(', ')
+  };
+});
+
+const heroUiStyle = computed(() => {
+  const effectsExit = smoothstep(clamp((props.scrollProgress - 0.55) / 0.17, 0, 1));
+  const surfaceExit = smoothstep(clamp((props.scrollProgress - 0.55) / 0.31, 0, 1));
+  return {
+    '--hero-hint-opacity': `${1 - effectsExit}`,
+    '--hero-effects-opacity': `${1 - effectsExit * 0.55}`,
+    '--hero-surface-opacity': `${1 - surfaceExit * 0.92}`
   };
 });
 
@@ -141,31 +156,41 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .mouse-trail-scroll-stage {
-  height: 100svh;
-  min-height: 100svh;
+  position: relative;
+  z-index: 2;
+  height: 186svh;
+  min-height: 186svh;
 }
 
 .mouse-trail-sticky {
   position: sticky;
   top: 0;
-  transition: opacity 0.08s linear, filter 0.08s linear, transform 0.08s linear;
-  will-change: opacity, filter, transform;
+  transition: opacity 0.12s linear, transform 0.12s linear;
+  will-change: opacity, transform;
+  background: rgba(2, 7, 12, var(--hero-surface-opacity, 1)) !important;
+}
+
+.mouse-trail-sticky :deep(.trail-canvas) {
+  opacity: var(--hero-effects-opacity, 1);
+  transition: opacity 0.12s linear;
 }
 
 .mouse-trail-sticky :deep(.trail-copy) {
-  top: 50%;
-  width: min(92vw, 42rem);
+  top: 48%;
+  width: min(88vw, 30rem);
 }
 
 .mouse-trail-sticky :deep(.trail-scroll-hint) {
   bottom: clamp(18px, 4vh, 28px);
+  opacity: var(--hero-hint-opacity, 1);
+  transition: opacity 0.16s linear, box-shadow 0.2s ease;
 }
 
 .center-avatar-shell {
   display: grid;
   place-items: center;
-  gap: clamp(0.8rem, 2vh, 1.25rem);
-  width: min(92vw, 42rem);
+  gap: clamp(0.35rem, 1.1vh, 0.75rem);
+  width: min(88vw, 30rem);
   margin: 0 auto;
   overflow: visible;
   contain: layout;
@@ -175,15 +200,15 @@ onBeforeUnmount(() => {
 .hero-stage-copy {
   display: grid;
   justify-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   width: 100%;
   text-align: center;
 }
 
 .hero-title {
   display: grid;
-  gap: 0.32rem;
-  width: min(100%, 40rem);
+  gap: 0.18rem;
+  width: min(100%, 28rem);
   margin: 0;
   color: #ffffff;
   font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -192,11 +217,18 @@ onBeforeUnmount(() => {
   line-height: 1.02;
   letter-spacing: 0;
   transform-style: preserve-3d;
-  transition: transform 0.12s ease-out, text-shadow 0.12s ease-out;
+  transition: opacity 0.12s linear, transform 0.12s ease-out, text-shadow 0.12s ease-out;
   text-shadow:
     0 0 8px rgba(255, 255, 255, 0.95),
     0 0 20px rgba(168, 245, 255, 0.45);
   will-change: transform, text-shadow;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title,
+  .center-avatar {
+    transition: none;
+  }
 }
 
 .hero-title span {
@@ -220,16 +252,17 @@ onBeforeUnmount(() => {
   position: relative;
   display: grid;
   place-items: center;
-  width: clamp(18rem, 31vw, 24rem);
-  height: clamp(15.5rem, 27vw, 21rem);
+  width: clamp(9.5rem, 16vw, 12.5rem);
+  height: clamp(8rem, 14vw, 10.8rem);
   isolation: isolate;
   perspective: 58rem;
   transform-style: preserve-3d;
+  will-change: opacity, transform;
 }
 
 .avatar-stage::before {
   position: absolute;
-  inset: 38% 8% 2%;
+  inset: 42% 10% 4%;
   z-index: 0;
   content: '';
   border-radius: 50%;
@@ -237,69 +270,18 @@ onBeforeUnmount(() => {
     radial-gradient(ellipse at 50% 26%, rgba(255, 255, 255, 0.28), transparent 26%),
     radial-gradient(ellipse at 50% 52%, rgba(182, 244, 255, 0.18), transparent 40%),
     radial-gradient(ellipse at 50% 78%, rgba(105, 226, 255, 0.14), transparent 64%);
-  filter: blur(20px);
-  pointer-events: none;
-}
-
-.stage-light-rig {
-  position: absolute;
-  top: -46vh;
-  left: 50%;
-  z-index: 1;
-  width: min(132vw, 88rem);
-  height: 70vh;
-  pointer-events: none;
-  overflow: visible;
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.34), transparent 15%),
-    linear-gradient(103deg, transparent 0 30%, rgba(160, 236, 255, 0.08) 42%, rgba(255, 255, 255, 0.3) 50%, rgba(160, 236, 255, 0.1) 58%, transparent 70%),
-    linear-gradient(77deg, transparent 0 31%, rgba(160, 236, 255, 0.06) 43%, rgba(255, 255, 255, 0.22) 51%, rgba(160, 236, 255, 0.08) 59%, transparent 72%);
-  clip-path: polygon(36% 0, 64% 0, 82% 100%, 18% 100%);
-  filter: blur(10px);
-  mix-blend-mode: screen;
-  opacity: 0.82;
-  transform: translateX(-50%);
-}
-
-.stage-light-rig::before {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 20%;
-  height: 100%;
-  content: '';
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.56), transparent 13%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(210, 250, 255, 0.2) 34%, rgba(255, 255, 255, 0.07) 74%, transparent);
-  clip-path: polygon(44% 0, 56% 0, 100% 100%, 0 100%);
-  filter: blur(8px);
-  mix-blend-mode: screen;
-  opacity: 0.96;
-  transform: translateX(-50%);
-}
-
-.stage-light-rig::after {
-  position: absolute;
-  right: 28%;
-  bottom: -4vh;
-  left: 28%;
-  height: 16vh;
-  content: '';
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.3), rgba(161, 241, 255, 0.16) 34%, transparent 68%);
   filter: blur(12px);
-  mix-blend-mode: screen;
-  opacity: 0.74;
+  pointer-events: none;
 }
 
 .center-avatar {
   position: relative;
   z-index: 2;
-  width: clamp(9.8rem, 15vw, 12.4rem);
+  width: clamp(4.9rem, 7.5vw, 6.2rem);
   aspect-ratio: 1;
   overflow: hidden;
   box-sizing: border-box;
-  padding: clamp(0.48rem, 0.9vw, 0.7rem);
+  padding: clamp(0.24rem, 0.45vw, 0.35rem);
   border: 1px solid rgba(220, 252, 255, 0.78);
   border-radius: 50%;
   background:
@@ -309,13 +291,13 @@ onBeforeUnmount(() => {
   isolation: isolate;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    inset 10px 14px 30px rgba(255, 255, 255, 0.22),
-    inset -14px -18px 34px rgba(0, 18, 28, 0.38),
+    inset 5px 7px 16px rgba(255, 255, 255, 0.22),
+    inset -7px -9px 18px rgba(0, 18, 28, 0.38),
     0 1px 0 rgba(255, 255, 255, 0.64),
-    0 18px 38px rgba(0, 18, 28, 0.36),
-    0 0 28px rgba(255, 255, 255, 0.22),
-    0 0 52px rgba(122, 243, 255, 0.28);
-  backdrop-filter: blur(14px) saturate(1.18);
+    0 9px 20px rgba(0, 18, 28, 0.34),
+    0 0 16px rgba(255, 255, 255, 0.2),
+    0 0 30px rgba(122, 243, 255, 0.24);
+  backdrop-filter: blur(10px) saturate(1.18);
   transform-origin: 50% 50%;
   transform-style: preserve-3d;
   will-change: opacity, transform;
@@ -323,7 +305,7 @@ onBeforeUnmount(() => {
 
 .center-avatar::before {
   position: absolute;
-  inset: 5px 7px auto;
+  inset: 3px 4px auto;
   z-index: 2;
   height: 42%;
   content: '';
@@ -378,11 +360,11 @@ onBeforeUnmount(() => {
 
 .stage-platform {
   position: absolute;
-  bottom: clamp(0.55rem, 1.8vw, 1.25rem);
+  bottom: clamp(0.28rem, 0.9vw, 0.62rem);
   left: 50%;
   z-index: 1;
-  width: 66%;
-  height: clamp(1.45rem, 3.8vw, 2.45rem);
+  width: 62%;
+  height: clamp(0.72rem, 1.9vw, 1.22rem);
   border: 1px solid rgba(216, 252, 255, 0.32);
   border-radius: 50%;
   background:
@@ -390,8 +372,8 @@ onBeforeUnmount(() => {
     radial-gradient(ellipse at 50% 60%, rgba(87, 226, 255, 0.26), rgba(2, 17, 25, 0.48) 64%, transparent 73%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    0 0 28px rgba(92, 232, 255, 0.34),
-    0 24px 42px rgba(0, 0, 0, 0.4);
+    0 0 16px rgba(92, 232, 255, 0.3),
+    0 12px 22px rgba(0, 0, 0, 0.36);
   transform: translateX(-50%) perspective(18rem) rotateX(58deg);
 }
 
@@ -424,13 +406,13 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .center-avatar-shell {
-    gap: 0.9rem;
-    width: min(90vw, 24rem);
+    gap: 0.45rem;
+    width: min(86vw, 18rem);
   }
 
   .hero-title {
-    width: min(100%, 20rem);
-    font-size: clamp(1.62rem, 7vw, 2.2rem);
+    width: min(100%, 17rem);
+    font-size: clamp(1.48rem, 6.4vw, 1.95rem);
     line-height: 1.04;
   }
 
@@ -440,17 +422,17 @@ onBeforeUnmount(() => {
   }
 
   .avatar-stage {
-    width: min(90vw, 19.5rem);
-    height: 15.2rem;
+    width: min(52vw, 10.2rem);
+    height: 7.9rem;
   }
 
   .center-avatar {
-    width: clamp(9.4rem, 42vw, 11.2rem);
+    width: clamp(4.7rem, 21vw, 5.6rem);
   }
 
   .mouse-trail-sticky :deep(.trail-copy) {
-    top: 47%;
-    width: min(90vw, 24rem);
+    top: 46%;
+    width: min(86vw, 18rem);
   }
 }
 

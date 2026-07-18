@@ -5,17 +5,28 @@
       :scroll-progress="heroProgress"
       @scroll-hint="scrollToFade"
     />
-    <ExperienceSection />
+    <div class="dawn-transition-shell">
+      <ExperienceSection
+        :dawn-progress="heroProgress"
+        :album-transition-progress="albumStoryProgress"
+      />
+    </div>
     <div
-      v-if="!shouldLoadAlbum"
-      ref="albumSentinelRef"
-      class="album-load-sentinel"
-      aria-hidden="true"
-    ></div>
-    <AlbumSection
-      v-if="shouldLoadAlbum"
-      :story-progress="albumStoryProgress"
-    />
+      ref="albumShellRef"
+      class="album-transition-shell"
+      :class="{ 'is-album-ready': albumVisualReady }"
+    >
+      <div
+        ref="albumSentinelRef"
+        class="album-load-sentinel"
+        aria-hidden="true"
+      ></div>
+      <AlbumSection
+        v-if="shouldLoadAlbum"
+        :story-progress="albumStoryProgress"
+        @ready="handleAlbumReady"
+      />
+    </div>
     <footer class="site-beian-footer" aria-label="网站备案信息">
       <a
         class="site-beian-link"
@@ -40,68 +51,74 @@
 
 <script setup>
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
-import ExperienceSection from './modules/experience/ExperienceSection.vue';
 import HomeHeroSection from './modules/hero/HomeHeroSection.vue';
-const AlbumSection = defineAsyncComponent(() => import('./modules/album/AlbumSection.vue'));
 
 const heroProgress = ref(0);
 const shouldLoadAlbum = ref(false);
+const albumVisualReady = ref(false);
+const albumShellRef = ref(null);
 const albumSentinelRef = ref(null);
 const albumStoryProgress = ref(0);
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const smoothstep = (value) => value * value * (3 - 2 * value);
+const getRangeProgress = (value, start, end) => (
+  smoothstep(clamp((value - start) / Math.max(end - start, 0.001), 0, 1))
+);
 
 const heroFadeStyle = computed(() => {
-  const eased = heroProgress.value * heroProgress.value * (3 - 2 * heroProgress.value);
-  const opacity = clamp(1 - eased, 0, 1);
+  const exit = getRangeProgress(heroProgress.value, 0.84, 0.9);
 
   return {
-    opacity,
-    filter: `blur(${eased * 8}px)`,
-    transform: `translate3d(0, ${eased * -22}px, 0) scale(${1 - eased * 0.025})`
+    opacity: 1 - exit,
+    filter: `blur(${exit * 8}px)`,
+    transform: `translate3d(0, ${exit * -22}px, 0) scale(${1 - exit * 0.025})`
   };
 });
 
 let scrollFrame = 0;
 let scrollAnimationFrame = 0;
 let albumLoadTimer = 0;
+let albumPreloadTimer = 0;
 let albumObserver = null;
+let albumModulePromise = null;
+
+const preloadAlbumSection = () => {
+  if (!albumModulePromise) {
+    albumModulePromise = import('./modules/album/AlbumSection.vue')
+      .then((module) => module);
+  }
+
+  return albumModulePromise;
+};
+
+const AlbumSection = defineAsyncComponent({
+  loader: preloadAlbumSection,
+  delay: 0
+});
+
+const ExperienceSection = defineAsyncComponent({
+  loader: () => import('./modules/experience/ExperienceSection.vue'),
+  delay: 0
+});
 
 const updateHeroProgress = () => {
   scrollFrame = 0;
 
-  const fadeDistance = Math.max(1, window.innerHeight * 0.85);
+  const fadeDistance = Math.max(1, window.innerHeight);
   heroProgress.value = clamp(window.scrollY / fadeDistance, 0, 1);
 
-  const albumTrigger = document.querySelector('.album-section') || albumSentinelRef.value;
+  const albumTrigger = document.querySelector('.album-section') || albumShellRef.value || albumSentinelRef.value;
   if (albumTrigger) {
-    const sectionTop = albumTrigger.offsetTop;
+    const sectionTop = window.scrollY + albumTrigger.getBoundingClientRect().top;
     const viewportHeight = window.innerHeight;
     const preludeDistance = viewportHeight * 0.72;
-    const avatarDistance = viewportHeight * 0.18;
     const storyStart = sectionTop - preludeDistance;
-    const phaseOneEnd = sectionTop - avatarDistance;
-    const phaseTwoEnd = sectionTop;
-    const currentY = window.scrollY;
-
-    if (currentY <= storyStart) {
-      albumStoryProgress.value = 0;
-      return;
-    }
-
-    if (currentY < phaseOneEnd) {
-      const phaseOneProgress = (currentY - storyStart) / Math.max(phaseOneEnd - storyStart, 1);
-      albumStoryProgress.value = phaseOneProgress * 0.3;
-      return;
-    }
-
-    if (currentY < phaseTwoEnd) {
-      const phaseTwoProgress = (currentY - phaseOneEnd) / Math.max(phaseTwoEnd - phaseOneEnd, 1);
-      albumStoryProgress.value = 0.3 + phaseTwoProgress * 0.35;
-      return;
-    }
-
-    albumStoryProgress.value = 0.65;
+    albumStoryProgress.value = clamp(
+      (window.scrollY - storyStart) / Math.max(preludeDistance, 1),
+      0,
+      1
+    );
   }
 };
 
@@ -110,22 +127,19 @@ const requestHeroProgressUpdate = () => {
   scrollFrame = requestAnimationFrame(updateHeroProgress);
 };
 
-const slowScrollTo = (targetY, duration = 1800) => {
-  if (scrollAnimationFrame) {
-    cancelAnimationFrame(scrollAnimationFrame);
-    scrollAnimationFrame = 0;
-  }
+const slowScrollTo = (targetY, duration = 1600) => {
+  cancelAnimationFrame(scrollAnimationFrame);
 
   const startY = window.scrollY;
   const distance = targetY - startY;
-  const startTime = performance.now();
+  const startedAt = performance.now();
   const root = document.documentElement;
-  const previousScrollBehavior = root.style.scrollBehavior;
+  const previousBehavior = root.style.scrollBehavior;
 
   root.style.scrollBehavior = 'auto';
 
   const tick = (time) => {
-    const progress = clamp((time - startTime) / duration, 0, 1);
+    const progress = clamp((time - startedAt) / duration, 0, 1);
     const eased = progress < 0.5
       ? 4 * progress * progress * progress
       : 1 - ((-2 * progress + 2) ** 3) / 2;
@@ -137,7 +151,7 @@ const slowScrollTo = (targetY, duration = 1800) => {
       return;
     }
 
-    root.style.scrollBehavior = previousScrollBehavior;
+    root.style.scrollBehavior = previousBehavior;
     scrollAnimationFrame = 0;
   };
 
@@ -147,24 +161,52 @@ const slowScrollTo = (targetY, duration = 1800) => {
 const scrollToFade = () => {
   const section = document.getElementById('experience-section');
   if (!section) return;
-  slowScrollTo(section.offsetTop, 1800);
+
+  const sectionTop = window.scrollY + section.getBoundingClientRect().top;
+  const targetY = Math.max(sectionTop, window.innerHeight);
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    window.scrollTo(0, targetY);
+    return;
+  }
+
+  slowScrollTo(targetY);
+};
+
+const preloadAlbumPreviews = () => {
+  ['/gallery/preview/photo-1.jpg', '/gallery/preview/photo-2.jpg', '/gallery/preview/photo-3.jpg']
+    .forEach((src) => {
+      const image = new Image();
+      image.decoding = 'async';
+      image.src = src;
+    });
 };
 
 const loadAlbumSection = () => {
   if (shouldLoadAlbum.value) return;
 
   shouldLoadAlbum.value = true;
+  void preloadAlbumSection();
   albumObserver?.disconnect();
   albumObserver = null;
   window.clearTimeout(albumLoadTimer);
+  window.clearTimeout(albumPreloadTimer);
+};
+
+const handleAlbumReady = () => {
+  albumVisualReady.value = true;
+  requestHeroProgressUpdate();
 };
 
 const scheduleAlbumLoad = () => {
   if (shouldLoadAlbum.value) return;
 
-  const sentinel = albumSentinelRef.value;
+  void preloadAlbumSection();
+  albumPreloadTimer = window.setTimeout(preloadAlbumPreviews, 320);
+  albumLoadTimer = window.setTimeout(loadAlbumSection, 1400);
+
+  const sentinel = albumShellRef.value || albumSentinelRef.value;
   if (!sentinel || !('IntersectionObserver' in window)) {
-    albumLoadTimer = window.setTimeout(loadAlbumSection, 5000);
+    albumLoadTimer = window.setTimeout(loadAlbumSection, 2800);
     return;
   }
 
@@ -173,7 +215,7 @@ const scheduleAlbumLoad = () => {
       loadAlbumSection();
     }
   }, {
-    rootMargin: '520px 0px'
+    rootMargin: '3600px 0px'
   });
   albumObserver.observe(sentinel);
 };
@@ -191,6 +233,7 @@ onBeforeUnmount(() => {
   cancelAnimationFrame(scrollFrame);
   cancelAnimationFrame(scrollAnimationFrame);
   clearTimeout(albumLoadTimer);
+  clearTimeout(albumPreloadTimer);
   albumObserver?.disconnect();
   document.documentElement.style.scrollBehavior = '';
 });
@@ -214,10 +257,17 @@ onBeforeUnmount(() => {
   margin: 0;
   overflow-x: clip;
   -ms-overflow-style: none;
+  background: #02070c;
+  color-scheme: dark;
 }
 
 :global(body) {
   scrollbar-width: none;
+}
+
+:global(#app) {
+  min-height: 100svh;
+  background: #02070c;
 }
 
 :global(html::-webkit-scrollbar),
@@ -228,34 +278,91 @@ onBeforeUnmount(() => {
 }
 
 .mouse-trail-demo {
+  --section-fade-duration: 420ms;
+  --section-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
   width: 100%;
   min-height: 100svh;
   background: #02070c;
   overflow-x: clip;
 }
 
-.album-load-sentinel {
+.album-transition-shell {
   position: relative;
-  min-height: 42svh;
+  z-index: 2;
+  min-height: 100svh;
+  margin-top: -28svh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 8%, rgba(78, 156, 190, 0.12), transparent 30%),
-    radial-gradient(circle at 50% 28%, rgba(44, 110, 145, 0.1), transparent 40%),
+    radial-gradient(circle at 50% 60%, rgba(85, 222, 255, 0.045), transparent 38%),
+    radial-gradient(circle at 18% 18%, rgba(132, 229, 255, 0.03), transparent 26%),
     linear-gradient(
       180deg,
-      rgba(28, 82, 114, 0.12) 0%,
-      rgba(20, 64, 94, 0.22) 14%,
-      rgba(14, 48, 74, 0.38) 28%,
-      rgba(10, 36, 58, 0.56) 42%,
-      rgba(7, 26, 42, 0.72) 56%,
-      rgba(4, 18, 30, 0.86) 70%,
-      rgba(3, 11, 19, 0.94) 84%,
-      #02070c 100%
+      #020a12 0%,
+      #02070c 36%,
+      #010305 70%,
+      #000 100%
     );
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .album-transition-shell {
+    margin-top: 0;
+  }
+}
+
+.dawn-transition-shell {
+  position: relative;
+  z-index: 1;
+  margin-top: -106svh;
+}
+
+.dawn-transition-shell::before {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 20svh;
+  content: '';
+  background: linear-gradient(180deg, #02070c 0%, rgba(3, 8, 14, 0.99) 46%, #0a0f1b 100%);
+  pointer-events: none;
+}
+
+.album-load-sentinel {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  min-height: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 60%, rgba(85, 222, 255, 0.045), transparent 38%),
+    radial-gradient(circle at 18% 18%, rgba(132, 229, 255, 0.03), transparent 26%),
+    linear-gradient(
+      180deg,
+      #020a12 0%,
+      #02070c 36%,
+      #010305 70%,
+      #000 100%
+    );
+  opacity: 1;
+  pointer-events: none;
+  transform: translateZ(0);
+  transition:
+    opacity var(--section-fade-duration) var(--section-fade-ease),
+    visibility var(--section-fade-duration) linear;
+}
+
+.album-transition-shell.is-album-ready .album-load-sentinel {
+  visibility: hidden;
+  opacity: 0;
+}
+
 .album-load-sentinel::before {
-  content: none;
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    radial-gradient(circle at 50% 44%, rgba(180, 248, 255, 0.07), transparent 18%),
+    linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.26) 100%);
 }
 
 .site-beian-footer {

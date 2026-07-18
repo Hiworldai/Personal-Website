@@ -2,6 +2,7 @@
   <section
     ref="sectionRef"
     class="album-section"
+    :class="{ 'is-album-interactive': phaseControlsProgress > 0.8 }"
     aria-labelledby="album-title"
     :style="albumSectionStyle"
   >
@@ -110,6 +111,8 @@ const AVATAR_START_Y = 10.1;
 const AVATAR_START_Z = 0.62;
 const AVATAR_END_Y = TREE_TOP_Y + 1.02;
 const AVATAR_END_Z = 0.18;
+const AVATAR_ENTRY_DURATION = 980;
+const AVATAR_ENTRY_TRIGGER_STORY_PROGRESS = 0.5;
 
 const props = defineProps({
   storyProgress: {
@@ -117,12 +120,14 @@ const props = defineProps({
     default: 0
   }
 });
+const emit = defineEmits(['ready']);
 
 const sectionRef = ref(null);
 const sceneHostRef = ref(null);
 const selectedPhotoIndex = ref(-1);
 const modalZoom = ref(1);
 const manualZoomProgress = ref(0);
+const avatarEntryProgress = ref(0);
 
 const selectedPhoto = computed(() => {
   if (selectedPhotoIndex.value < 0) return null;
@@ -134,13 +139,19 @@ const getSegmentProgress = (start, end, value) => {
   return clamp((value - start) / (end - start), 0, 1);
 };
 
-const phaseDarkenProgress = computed(() => getSegmentProgress(0, 0.28, props.storyProgress));
-const phaseAvatarProgress = computed(() => getSegmentProgress(0.15, 0.6, props.storyProgress));
+const phaseSurfaceProgress = computed(() => getSegmentProgress(0.18, 0.5, props.storyProgress));
+const phaseAvatarProgress = computed(() => getSegmentProgress(0.4, 0.68, props.storyProgress));
+const phasePhotonProgress = computed(() => getSegmentProgress(0.62, 0.84, props.storyProgress));
+const phasePhotoProgress = computed(() => getSegmentProgress(0.78, 1, props.storyProgress));
+const phaseCopyProgress = computed(() => getSegmentProgress(0.84, 1, props.storyProgress));
+const phaseControlsProgress = computed(() => getSegmentProgress(0.9, 1, props.storyProgress));
 const phaseZoomProgress = computed(() => manualZoomProgress.value);
-const darkenEasedProgress = computed(() => easeInOutCubic(phaseDarkenProgress.value));
+const surfaceEasedProgress = computed(() => easeInOutCubic(phaseSurfaceProgress.value));
 
 const albumSectionStyle = computed(() => ({
-  '--entry-progress': `${darkenEasedProgress.value}`
+  '--entry-progress': `${surfaceEasedProgress.value}`,
+  '--copy-entry': `${easeInOutCubic(phaseCopyProgress.value)}`,
+  '--controls-entry': `${easeInOutCubic(phaseControlsProgress.value)}`
 }));
 
 const modalMediaStyle = computed(() => ({
@@ -154,13 +165,17 @@ let photoOrbit;
 let photonTree;
 let photonDisk;
 let starField;
+let accentStarField;
+let photonBeam;
 let avatarCoin;
 let raycaster;
 let pointer;
 let animationFrame = 0;
 let resizeObserver;
 let sectionObserver;
+let motionMediaQuery;
 let isVisible = false;
+let prefersReducedMotion = false;
 let isDragging = false;
 let dragMoved = false;
 let lastPointer = { x: 0, y: 0 };
@@ -175,8 +190,14 @@ let pointerDriftY = 0;
 let pointerDriftTargetX = 0;
 let pointerDriftTargetY = 0;
 let photoMeshes = [];
+let photoCardMaterials = [];
 let avatarCoinMaterials = [];
 let avatarCoinTexture;
+let hasEmittedReady = false;
+let hasPlayedAvatarEntry = false;
+let isAvatarEntryPlaying = false;
+let avatarEntryFrame = 0;
+const preloadedMedia = new Set();
 
 const isVideoItem = (item) => /\.mp4$/i.test(item?.src || '');
 
@@ -210,8 +231,31 @@ const resetModalZoom = () => {
   modalZoom.value = 1;
 };
 
+const preloadMediaSrc = (src) => {
+  if (!src || preloadedMedia.has(src)) return;
+
+  preloadedMedia.add(src);
+  const image = new Image();
+  image.decoding = 'async';
+  image.src = src;
+};
+
+const preloadPhotoAround = (index) => {
+  if (index < 0 || !galleryItems.length) return;
+
+  [index, index + 1, index - 1].forEach((candidateIndex) => {
+    const wrappedIndex = (candidateIndex + galleryItems.length) % galleryItems.length;
+    const item = galleryItems[wrappedIndex];
+    if (!item || isVideoItem(item)) return;
+
+    preloadMediaSrc(getDisplayWebpSrc(item.src));
+    preloadMediaSrc(getDisplaySrc(item.src));
+  });
+};
+
 const openPhoto = (index) => {
   selectedPhotoIndex.value = index;
+  preloadPhotoAround(index);
   resetModalZoom();
   document.body.classList.add('modal-open');
 };
@@ -224,11 +268,13 @@ const closePhoto = () => {
 
 const showPrevPhoto = () => {
   selectedPhotoIndex.value = (selectedPhotoIndex.value - 1 + galleryItems.length) % galleryItems.length;
+  preloadPhotoAround(selectedPhotoIndex.value);
   resetModalZoom();
 };
 
 const showNextPhoto = () => {
   selectedPhotoIndex.value = (selectedPhotoIndex.value + 1) % galleryItems.length;
+  preloadPhotoAround(selectedPhotoIndex.value);
   resetModalZoom();
 };
 
@@ -305,7 +351,6 @@ const createPointCloud = ({ count, color, size, texture, generator }) => {
     depthWrite: false,
     blending: THREE.AdditiveBlending
   });
-
   return new THREE.Points(geometry, material);
 };
 
@@ -322,29 +367,29 @@ const buildPhotonScene = () => {
       x: (Math.random() - 0.5) * 78,
       y: (Math.random() - 0.5) * 38 + 4,
       z: (Math.random() - 0.5) * 56,
-      shade: 0.45 + Math.random() * 0.65
+      shade: 0.45 + Math.random() * 0.62
     })
   });
   scene.add(starField);
 
-  const accentStars = createPointCloud({
+  accentStarField = createPointCloud({
     count: 90,
     color: '#ffffff',
-    size: 0.32,
+    size: 0.3,
     texture: starTexture,
     generator: () => ({
       x: (Math.random() - 0.5) * 72,
       y: (Math.random() - 0.5) * 30 + 4,
       z: (Math.random() - 0.5) * 48,
-      shade: 0.75 + Math.random() * 0.35
+      shade: 0.72 + Math.random() * 0.32
     })
   });
-  scene.add(accentStars);
+  scene.add(accentStarField);
 
   photonDisk = createPointCloud({
     count: 2800,
     color: '#f4fdff',
-    size: 0.075,
+    size: 0.073,
     texture: particleTexture,
     generator: () => {
       const angle = Math.random() * Math.PI * 2;
@@ -353,7 +398,7 @@ const buildPhotonScene = () => {
         x: Math.cos(angle) * radius,
         y: -7.18 + (Math.random() - 0.5) * 0.24,
         z: Math.sin(angle) * radius * 0.68,
-        shade: 0.55 + Math.random() * 0.7
+        shade: 0.5 + Math.random() * 0.62
       };
     }
   });
@@ -362,7 +407,7 @@ const buildPhotonScene = () => {
   photonTree = createPointCloud({
     count: 3600,
     color: '#ffffff',
-    size: 0.07,
+    size: 0.068,
     texture: particleTexture,
     generator: () => {
       const height = Math.random();
@@ -372,16 +417,16 @@ const buildPhotonScene = () => {
         x: Math.cos(angle) * radius,
         y: -7.36 + height * 13.35,
         z: Math.sin(angle) * radius,
-        shade: 0.72 + height * 0.42
+        shade: 0.7 + height * 0.4
       };
     }
   });
   scene.add(photonTree);
 
-  const beam = createPointCloud({
+  photonBeam = createPointCloud({
     count: 900,
     color: '#f5fdff',
-    size: 0.09,
+    size: 0.085,
     texture: particleTexture,
     generator: () => {
       const height = Math.random();
@@ -391,11 +436,11 @@ const buildPhotonScene = () => {
         x: Math.cos(angle) * radius,
         y: -7.52 + height * 12.95,
         z: Math.sin(angle) * radius,
-        shade: 0.86 + Math.random() * 0.34
+        shade: 0.78 + Math.random() * 0.3
       };
     }
   });
-  scene.add(beam);
+  scene.add(photonBeam);
   createAvatarCoin();
 };
 
@@ -423,7 +468,7 @@ const createAvatarCoin = () => {
     opacity: 0,
     depthWrite: false
   });
-  edgeMaterial.userData.opacityMultiplier = 0.28;
+  edgeMaterial.userData.opacityMultiplier = 0.38;
 
   const faceMaterialFront = new THREE.MeshBasicMaterial({
     map: avatarCoinTexture,
@@ -431,7 +476,7 @@ const createAvatarCoin = () => {
     opacity: 0,
     depthWrite: false
   });
-  faceMaterialFront.userData.opacityMultiplier = 0.74;
+  faceMaterialFront.userData.opacityMultiplier = 0.96;
 
   const faceMaterialBack = new THREE.MeshBasicMaterial({
     map: avatarCoinTexture,
@@ -439,7 +484,7 @@ const createAvatarCoin = () => {
     opacity: 0,
     depthWrite: false
   });
-  faceMaterialBack.userData.opacityMultiplier = 0.62;
+  faceMaterialBack.userData.opacityMultiplier = 0.78;
 
   const coinMesh = new THREE.Mesh(coinGeometry, [edgeMaterial, faceMaterialFront, faceMaterialBack]);
 
@@ -464,7 +509,7 @@ const createAvatarCoin = () => {
     blending: THREE.AdditiveBlending,
     depthWrite: false
   });
-  haloMaterial.userData.opacityMultiplier = 0.14;
+  haloMaterial.userData.opacityMultiplier = 0.22;
 
   const haloMesh = new THREE.Mesh(
     new THREE.RingGeometry(radius * 1.08, radius * 1.3, 80),
@@ -502,11 +547,80 @@ const updateAvatarFall = (progress) => {
   avatarCoin.rotation.y = 0;
   avatarCoin.rotation.z = AVATAR_FACE_ROTATION_Z;
   avatarCoin.scale.setScalar(finalScale);
-  setAvatarCoinOpacity(0.82 * fadeIn);
+  setAvatarCoinOpacity(fadeIn);
 };
 
-watch(phaseAvatarProgress, (newVal) => {
-  updateAvatarFall(newVal);
+const getAvatarVisualProgress = () => (
+  isAvatarEntryPlaying ? avatarEntryProgress.value : phaseAvatarProgress.value
+);
+
+const stopAvatarEntry = () => {
+  cancelAnimationFrame(avatarEntryFrame);
+  avatarEntryFrame = 0;
+  isAvatarEntryPlaying = false;
+};
+
+const playAvatarEntry = () => {
+  if (!avatarCoin || hasPlayedAvatarEntry || isAvatarEntryPlaying) return;
+
+  stopAvatarEntry();
+  isAvatarEntryPlaying = true;
+  const entryStart = clamp(phaseAvatarProgress.value, 0, 1);
+  const remainingDuration = Math.max(1, AVATAR_ENTRY_DURATION * (1 - entryStart));
+  avatarEntryProgress.value = entryStart;
+  updateAvatarFall(entryStart);
+
+  const startedAt = performance.now();
+  const tick = (time) => {
+    const progress = entryStart
+      + clamp((time - startedAt) / remainingDuration, 0, 1) * (1 - entryStart);
+    avatarEntryProgress.value = progress;
+    updateAvatarFall(progress);
+
+    if (progress < 1) {
+      avatarEntryFrame = requestAnimationFrame(tick);
+      return;
+    }
+
+    hasPlayedAvatarEntry = true;
+    isAvatarEntryPlaying = false;
+    avatarEntryFrame = 0;
+    updateAvatarFall(1);
+  };
+
+  avatarEntryFrame = requestAnimationFrame(tick);
+};
+
+const syncAvatarFallWithStory = () => {
+  if (!avatarCoin) return;
+
+  if (phaseAvatarProgress.value < 0.08) {
+    stopAvatarEntry();
+    hasPlayedAvatarEntry = false;
+    avatarEntryProgress.value = 0;
+    updateAvatarFall(phaseAvatarProgress.value);
+    return;
+  }
+
+  if (
+    props.storyProgress >= AVATAR_ENTRY_TRIGGER_STORY_PROGRESS
+    && !hasPlayedAvatarEntry
+  ) {
+    playAvatarEntry();
+    return;
+  }
+
+  if (!isAvatarEntryPlaying) {
+    updateAvatarFall(phaseAvatarProgress.value);
+  }
+};
+
+watch(() => props.storyProgress, () => {
+  syncAvatarFallWithStory();
+  if (prefersReducedMotion) {
+    applyEntryVisuals(0);
+    renderer?.render(scene, camera);
+  }
 });
 
 const createPhotoCards = () => {
@@ -530,46 +644,53 @@ const createPhotoCards = () => {
     card.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
     card.lookAt(0, y * 0.16, 0);
 
+    const frameMaterial = new THREE.MeshBasicMaterial({
+      color: '#e8fbff',
+      transparent: true,
+      opacity: 0.34,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    frameMaterial.userData.entryOpacity = 0.34;
     const frame = new THREE.Mesh(
       new THREE.PlaneGeometry(width + 0.16, height + 0.16),
-      new THREE.MeshBasicMaterial({
-        color: '#e8fbff',
-        transparent: true,
-        opacity: 0.34,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      })
+      frameMaterial
     );
     frame.position.z = -0.012;
     card.add(frame);
 
+    const photoMaterial = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      opacity: 0.92,
+      side: THREE.DoubleSide
+    });
+    photoMaterial.userData.entryOpacity = 0.92;
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(width, height),
-      new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        opacity: 0.92,
-        side: THREE.DoubleSide
-      })
+      photoMaterial
     );
     mesh.userData = { index };
     card.add(mesh);
 
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: '#73edff',
+      transparent: true,
+      opacity: 0.08,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    glowMaterial.userData.entryOpacity = 0.08;
     const glow = new THREE.Mesh(
       new THREE.PlaneGeometry(width + 0.44, height + 0.44),
-      new THREE.MeshBasicMaterial({
-        color: '#73edff',
-        transparent: true,
-        opacity: 0.08,
-        side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      })
+      glowMaterial
     );
     glow.position.z = -0.03;
     card.add(glow);
 
     photoMeshes.push(mesh);
+    photoCardMaterials.push(frameMaterial, photoMaterial, glowMaterial);
     photoOrbit.add(card);
   });
 };
@@ -581,21 +702,41 @@ const resizeRenderer = () => {
   const width = host.clientWidth || 1;
   const height = host.clientHeight || 1;
   renderer.setSize(width, height, false);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.4));
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
 };
 
-const animate = (time = 0) => {
-  animationFrame = requestAnimationFrame(animate);
+const applyEntryVisuals = (time = 0) => {
+  const photonEntry = easeInOutCubic(phasePhotonProgress.value);
+  const photoEntry = easeInOutCubic(phasePhotoProgress.value);
+  const pulse = 0.72 + Math.sin(time * 2.2) * 0.1;
 
-  if (!isVisible && document.hidden) return;
+  if (starField) starField.material.opacity = 0.9 * photonEntry;
+  if (accentStarField) accentStarField.material.opacity = 0.9 * photonEntry;
+  if (photonDisk) photonDisk.material.opacity = 0.9 * photonEntry;
+  if (photonTree) photonTree.material.opacity = pulse * photonEntry;
+  if (photonBeam) photonBeam.material.opacity = 0.9 * photonEntry;
+
+  photoCardMaterials.forEach((material) => {
+    material.opacity = (material.userData.entryOpacity ?? 1) * photoEntry;
+  });
+
+  photoOrbit?.scale.setScalar(0.94 + photoEntry * 0.06);
+};
+
+const animate = (time = 0) => {
+  animationFrame = 0;
+  if (!isVisible || document.hidden || prefersReducedMotion) return;
 
   const t = time * 0.001;
   const zoomPhase = phaseZoomProgress.value;
+  const photoEntry = easeInOutCubic(phasePhotoProgress.value);
+
+  applyEntryVisuals(t);
 
   if (!isDragging) {
-    targetRotationY += 0.00115 + zoomPhase * 0.0009;
+    targetRotationY += (0.00115 + zoomPhase * 0.0009) * photoEntry;
   }
 
   if (photoOrbit) {
@@ -630,7 +771,6 @@ const animate = (time = 0) => {
 
   if (photonTree) {
     photonTree.rotation.y = t * 0.28;
-    photonTree.material.opacity = 0.76 + Math.sin(t * 2.2) * 0.12;
   }
 
   if (photonDisk) {
@@ -641,7 +781,7 @@ const animate = (time = 0) => {
     starField.rotation.y = t * 0.015;
   }
 
-  if (avatarCoin && phaseAvatarProgress.value >= 1) {
+  if (avatarCoin && getAvatarVisualProgress() >= 1) {
     avatarCoin.position.set(
       0,
       AVATAR_END_Y + Math.sin(t * 1.35) * 0.12,
@@ -653,6 +793,32 @@ const animate = (time = 0) => {
   }
 
   renderer.render(scene, camera);
+  animationFrame = requestAnimationFrame(animate);
+};
+
+const startAnimation = () => {
+  if (animationFrame || !renderer || !isVisible || document.hidden || prefersReducedMotion) return;
+  animationFrame = requestAnimationFrame(animate);
+};
+
+const stopAnimation = () => {
+  cancelAnimationFrame(animationFrame);
+  animationFrame = 0;
+};
+
+const handleVisibilityChange = () => {
+  if (document.hidden) stopAnimation();
+  else startAnimation();
+};
+
+const handleMotionPreferenceChange = (event) => {
+  prefersReducedMotion = event.matches;
+  if (prefersReducedMotion) {
+    stopAnimation();
+    renderer?.render(scene, camera);
+  } else {
+    startAnimation();
+  }
 };
 
 const initScene = async () => {
@@ -682,11 +848,18 @@ const initScene = async () => {
   buildPhotonScene();
   createPhotoCards();
   resizeRenderer();
-  animate();
+  syncAvatarFallWithStory();
+  applyEntryVisuals(0);
+  renderer.render(scene, camera);
+  if (!hasEmittedReady) {
+    hasEmittedReady = true;
+    emit('ready');
+  }
+  startAnimation();
 };
 
 const pickPhoto = (event) => {
-  if (!renderer || !camera || !raycaster || !pointer) return;
+  if (!renderer || !camera || !raycaster || !pointer || phasePhotoProgress.value < 0.72) return;
 
   const rect = renderer.domElement.getBoundingClientRect();
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -701,7 +874,7 @@ const pickPhoto = (event) => {
 };
 
 const handlePointerDown = (event) => {
-  if (event.target.closest('.back-button')) return;
+  if (event.target.closest('.back-button') || phasePhotoProgress.value < 0.72) return;
 
   updatePointerDrift(event);
   isDragging = true;
@@ -754,21 +927,15 @@ const handlePointerLeave = () => {
 
 const handleSceneWheel = (event) => {
   if (event.target.closest('.back-button')) return;
-  if (phaseAvatarProgress.value < 1 || selectedPhoto.value) return;
+  if (phaseAvatarProgress.value < 1 || phasePhotoProgress.value < 0.72 || selectedPhoto.value) return;
 
   const nextZoom = clamp(manualZoomProgress.value + event.deltaY * 0.0022, 0, 1);
   const zoomChanged = Math.abs(nextZoom - manualZoomProgress.value) > 0.0001;
 
-  if (event.deltaY > 0) {
-    event.preventDefault();
-  }
-
   if (!zoomChanged) return;
 
   manualZoomProgress.value = nextZoom;
-  if (event.deltaY > 0 || manualZoomProgress.value > 0.001) {
-    event.preventDefault();
-  }
+  event.preventDefault();
 };
 
 watch(phaseAvatarProgress, (newVal) => {
@@ -800,9 +967,12 @@ const scrollToExperience = () => {
 };
 
 onMounted(() => {
+  motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  prefersReducedMotion = motionMediaQuery.matches;
   initScene();
-  updateAvatarFall(phaseAvatarProgress.value);
   window.addEventListener('keydown', handleKeydown);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  motionMediaQuery.addEventListener?.('change', handleMotionPreferenceChange);
 
   if ('ResizeObserver' in window && sceneHostRef.value) {
     resizeObserver = new ResizeObserver(resizeRenderer);
@@ -814,39 +984,43 @@ onMounted(() => {
   if ('IntersectionObserver' in window && sectionRef.value) {
     sectionObserver = new IntersectionObserver((entries) => {
       isVisible = entries.some((entry) => entry.isIntersecting);
+      if (isVisible) startAnimation();
+      else stopAnimation();
     }, {
       rootMargin: '240px 0px'
     });
     sectionObserver.observe(sectionRef.value);
   } else {
     isVisible = true;
+    startAnimation();
   }
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('resize', resizeRenderer);
-  cancelAnimationFrame(animationFrame);
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  motionMediaQuery?.removeEventListener?.('change', handleMotionPreferenceChange);
+  stopAnimation();
+  cancelAnimationFrame(avatarEntryFrame);
   resizeObserver?.disconnect();
   sectionObserver?.disconnect();
   document.body.classList.remove('modal-open');
 
+  scene?.traverse((child) => {
+    child.geometry?.dispose?.();
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.filter(Boolean).forEach((material) => {
+      material.map?.dispose?.();
+      material.dispose?.();
+    });
+  });
   photoMeshes = [];
+  photoCardMaterials = [];
 
   if (renderer) {
     renderer.dispose();
     renderer.domElement?.remove();
-  }
-
-  if (avatarCoin) {
-    avatarCoin.traverse((child) => {
-      child.geometry?.dispose?.();
-      if (Array.isArray(child.material)) {
-        child.material.forEach((material) => material?.dispose?.());
-      } else {
-        child.material?.dispose?.();
-      }
-    });
   }
 
   avatarCoinTexture?.dispose?.();
@@ -863,9 +1037,8 @@ onBeforeUnmount(() => {
   color: #f6fdff;
   font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background:
-    radial-gradient(circle at 50% 60%, rgba(85, 222, 255, 0.045), transparent 38%),
-    radial-gradient(circle at 18% 18%, rgba(132, 229, 255, 0.03), transparent 26%),
-    linear-gradient(180deg, #020a12 0%, #02070c 36%, #010305 70%, #000 100%);
+    radial-gradient(circle at 50% 62%, rgba(50, 142, 168, 0.022), transparent 34%),
+    linear-gradient(180deg, #010408 0%, #010305 42%, #000102 72%, #000 100%);
 }
 
 .album-stage {
@@ -881,9 +1054,9 @@ onBeforeUnmount(() => {
   z-index: 3;
   content: '';
   background:
-    radial-gradient(circle at 50% 56%, transparent 0 28%, rgba(0, 0, 0, 0.2) 52%, rgba(0, 0, 0, 0.68) 100%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.22), transparent 28%, transparent 72%, rgba(0, 0, 0, 0.32));
-  opacity: var(--entry-progress, 1);
+    radial-gradient(circle at 50% 56%, transparent 0 32%, rgba(0, 0, 0, 0.18) 58%, rgba(0, 0, 0, 0.54) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.04) 32%, rgba(0, 0, 0, 0.12) 70%, rgba(0, 0, 0, 0.34));
+  opacity: calc(0.22 + var(--entry-progress, 1) * 0.36);
   pointer-events: none;
 }
 
@@ -900,9 +1073,9 @@ onBeforeUnmount(() => {
   gap: 0.35rem;
   width: min(35rem, 48vw);
   pointer-events: none;
-  opacity: calc(0.38 + var(--entry-progress, 1) * 0.62);
-  filter: blur(calc((1 - var(--entry-progress, 1)) * 8px));
-  transform: translate3d(0, calc((1 - var(--entry-progress, 1)) * 2.4rem), 0);
+  opacity: var(--copy-entry, 1);
+  filter: blur(calc((1 - var(--copy-entry, 1)) * 8px));
+  transform: translate3d(0, calc((1 - var(--copy-entry, 1)) * 2.4rem), 0);
   transition: opacity 0.18s linear, filter 0.18s linear, transform 0.18s linear;
 }
 
@@ -926,8 +1099,8 @@ onBeforeUnmount(() => {
   font-weight: 900;
   line-height: 1;
   text-shadow:
-    0 0 12px rgba(255, 255, 255, 0.64),
-    0 0 42px rgba(116, 232, 255, 0.32);
+    0 0 8px rgba(255, 255, 255, 0.36),
+    0 0 24px rgba(84, 194, 222, 0.2);
 }
 
 .album-copy p {
@@ -953,6 +1126,10 @@ onBeforeUnmount(() => {
   cursor: grabbing;
 }
 
+.album-section:not(.is-album-interactive) .photon-scene {
+  cursor: default;
+}
+
 .photon-scene :deep(canvas) {
   display: block;
   width: 100%;
@@ -971,16 +1148,23 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(180, 246, 255, 0.22);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.045));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.026));
   color: rgba(225, 249, 255, 0.76);
   font-size: 0.74rem;
   font-weight: 800;
   cursor: pointer;
+  opacity: var(--controls-entry, 1);
+  pointer-events: none;
+  transform: translate3d(0, calc((1 - var(--controls-entry, 1)) * 1rem), 0);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 10px 24px rgba(0, 0, 0, 0.26);
   backdrop-filter: blur(14px);
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+  transition: border-color 0.2s ease, background 0.2s ease, opacity 0.15s linear, transform 0.15s ease;
+}
+
+.album-section.is-album-interactive .back-button {
+  pointer-events: auto;
 }
 
 .back-button:hover {

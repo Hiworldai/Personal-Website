@@ -102,6 +102,31 @@ let fallbackLastTime = 0;
 let fallbackAnimationFrame = 0;
 let shouldTrackTouch = false;
 let canvasRect = null;
+let intersectionObserver;
+let fluidUpdate;
+let fallbackDraw;
+let isVisible = true;
+let lastFluidRenderTime = 0;
+
+const canAnimate = () => isVisible && !document.hidden;
+
+const stopRendering = () => {
+  cancelAnimationFrame(animationFrame);
+  cancelAnimationFrame(fallbackAnimationFrame);
+  animationFrame = 0;
+  fallbackAnimationFrame = 0;
+};
+
+const startRendering = () => {
+  if (!canAnimate()) return;
+  if (fluidUpdate && !animationFrame) animationFrame = requestAnimationFrame(fluidUpdate);
+  if (fallbackDraw && !fallbackAnimationFrame) fallbackAnimationFrame = requestAnimationFrame(fallbackDraw);
+};
+
+const handleVisibilityChange = () => {
+  if (document.hidden) stopRendering();
+  else startRendering();
+};
 
 const config = {
   textureDownsample: 1,
@@ -200,6 +225,7 @@ const movePointer = (clientX, clientY) => {
 };
 
 const handlePointerMove = (event) => {
+  if (!isVisible) return;
   movePointer(event.clientX, event.clientY);
 };
 
@@ -429,7 +455,8 @@ const startFallbackCanvas = () => {
   resizeCanvas();
 
   const draw = (time) => {
-    fallbackAnimationFrame = requestAnimationFrame(draw);
+    fallbackAnimationFrame = 0;
+    if (!canAnimate()) return;
     const dt = Math.min((time - fallbackLastTime) / 1000 || 0.016, 0.032);
     fallbackLastTime = time;
 
@@ -451,9 +478,12 @@ const startFallbackCanvas = () => {
       fallbackContext.arc(point.x, point.y, point.radius, 0, Math.PI * 2);
       fallbackContext.fill();
     });
+
+    fallbackAnimationFrame = requestAnimationFrame(draw);
   };
 
-  draw(performance.now());
+  fallbackDraw = draw;
+  startRendering();
 };
 
 const initFluid = () => {
@@ -728,7 +758,12 @@ void main () {
 
   let lastTime = performance.now();
   const update = (time) => {
+    animationFrame = 0;
+    if (!canAnimate()) return;
+
     animationFrame = requestAnimationFrame(update);
+    if (time - lastFluidRenderTime < 1000 / 45) return;
+    lastFluidRenderTime = time;
 
     const dt = Math.min((time - lastTime) / 1000, 0.016);
     lastTime = time;
@@ -807,7 +842,8 @@ void main () {
     blit(null);
   };
 
-  update(performance.now());
+  fluidUpdate = update;
+  startRendering();
 };
 
 onMounted(() => {
@@ -816,9 +852,19 @@ onMounted(() => {
   initFluid();
 
   window.addEventListener('resize', handleResize);
-  window.addEventListener('scroll', handleWindowScroll);
-  window.addEventListener('pointermove', handlePointerMove);
+  window.addEventListener('scroll', handleWindowScroll, { passive: true });
+  window.addEventListener('pointermove', handlePointerMove, { passive: true });
   window.addEventListener('touchmove', handleTouchMove, { passive: true });
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  if ('IntersectionObserver' in window && rootRef.value) {
+    intersectionObserver = new IntersectionObserver(([entry]) => {
+      isVisible = entry.isIntersecting;
+      if (isVisible) startRendering();
+      else stopRendering();
+    }, { rootMargin: '120px 0px', threshold: 0.01 });
+    intersectionObserver.observe(rootRef.value);
+  }
 });
 
 onBeforeUnmount(() => {
@@ -826,8 +872,9 @@ onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleWindowScroll);
   window.removeEventListener('pointermove', handlePointerMove);
   window.removeEventListener('touchmove', handleTouchMove);
-  cancelAnimationFrame(animationFrame);
-  cancelAnimationFrame(fallbackAnimationFrame);
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  intersectionObserver?.disconnect();
+  stopRendering();
 });
 </script>
 
@@ -835,7 +882,7 @@ onBeforeUnmount(() => {
 .mouse-trail-effect {
   position: relative;
   width: 100%;
-  height: 100vh;
+  height: 100svh;
   min-height: 520px;
   overflow: hidden;
   background: #02070c;
