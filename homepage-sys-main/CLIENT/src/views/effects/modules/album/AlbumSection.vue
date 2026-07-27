@@ -2,7 +2,10 @@
   <section
     ref="sectionRef"
     class="album-section"
-    :class="{ 'is-album-interactive': phaseControlsProgress > 0.8 }"
+    :class="{
+      'is-album-interactive': phaseControlsProgress > 0.8,
+      'is-entry-handoff': storyProgress > 0.01 && storyProgress < 0.999
+    }"
     aria-labelledby="album-title"
     :style="albumSectionStyle"
   >
@@ -107,12 +110,10 @@ const TREE_NEAR_FOCUS_Y = 2.5;
 const TREE_FAR_FOCUS_Y = -2.3;
 const AVATAR_FACE_ROTATION_Z = Math.PI / 2;
 const AVATAR_START_X = 0;
-const AVATAR_START_Y = 10.1;
+const AVATAR_START_Y = 14.2;
 const AVATAR_START_Z = 0.62;
 const AVATAR_END_Y = TREE_TOP_Y + 1.02;
 const AVATAR_END_Z = 0.18;
-const AVATAR_ENTRY_DURATION = 980;
-const AVATAR_ENTRY_TRIGGER_STORY_PROGRESS = 0.5;
 
 const props = defineProps({
   storyProgress: {
@@ -127,7 +128,6 @@ const sceneHostRef = ref(null);
 const selectedPhotoIndex = ref(-1);
 const modalZoom = ref(1);
 const manualZoomProgress = ref(0);
-const avatarEntryProgress = ref(0);
 
 const selectedPhoto = computed(() => {
   if (selectedPhotoIndex.value < 0) return null;
@@ -139,12 +139,13 @@ const getSegmentProgress = (start, end, value) => {
   return clamp((value - start) / (end - start), 0, 1);
 };
 
-const phaseSurfaceProgress = computed(() => getSegmentProgress(0.18, 0.5, props.storyProgress));
-const phaseAvatarProgress = computed(() => getSegmentProgress(0.4, 0.68, props.storyProgress));
-const phasePhotonProgress = computed(() => getSegmentProgress(0.62, 0.84, props.storyProgress));
-const phasePhotoProgress = computed(() => getSegmentProgress(0.78, 1, props.storyProgress));
-const phaseCopyProgress = computed(() => getSegmentProgress(0.84, 1, props.storyProgress));
-const phaseControlsProgress = computed(() => getSegmentProgress(0.9, 1, props.storyProgress));
+const phaseSurfaceProgress = computed(() => getSegmentProgress(0.08, 0.22, props.storyProgress));
+const phaseStarProgress = computed(() => getSegmentProgress(0.2, 0.42, props.storyProgress));
+const phaseAvatarProgress = computed(() => getSegmentProgress(0.34, 0.9, props.storyProgress));
+const phasePhotonProgress = computed(() => getSegmentProgress(0.58, 0.86, props.storyProgress));
+const phasePhotoProgress = computed(() => getSegmentProgress(0.74, 0.94, props.storyProgress));
+const phaseCopyProgress = computed(() => getSegmentProgress(0.88, 1, props.storyProgress));
+const phaseControlsProgress = computed(() => getSegmentProgress(0.96, 1, props.storyProgress));
 const phaseZoomProgress = computed(() => manualZoomProgress.value);
 const surfaceEasedProgress = computed(() => easeInOutCubic(phaseSurfaceProgress.value));
 
@@ -194,9 +195,6 @@ let photoCardMaterials = [];
 let avatarCoinMaterials = [];
 let avatarCoinTexture;
 let hasEmittedReady = false;
-let hasPlayedAvatarEntry = false;
-let isAvatarEntryPlaying = false;
-let avatarEntryFrame = 0;
 const preloadedMedia = new Set();
 
 const isVideoItem = (item) => /\.mp4$/i.test(item?.src || '');
@@ -550,69 +548,9 @@ const updateAvatarFall = (progress) => {
   setAvatarCoinOpacity(fadeIn);
 };
 
-const getAvatarVisualProgress = () => (
-  isAvatarEntryPlaying ? avatarEntryProgress.value : phaseAvatarProgress.value
-);
-
-const stopAvatarEntry = () => {
-  cancelAnimationFrame(avatarEntryFrame);
-  avatarEntryFrame = 0;
-  isAvatarEntryPlaying = false;
-};
-
-const playAvatarEntry = () => {
-  if (!avatarCoin || hasPlayedAvatarEntry || isAvatarEntryPlaying) return;
-
-  stopAvatarEntry();
-  isAvatarEntryPlaying = true;
-  const entryStart = clamp(phaseAvatarProgress.value, 0, 1);
-  const remainingDuration = Math.max(1, AVATAR_ENTRY_DURATION * (1 - entryStart));
-  avatarEntryProgress.value = entryStart;
-  updateAvatarFall(entryStart);
-
-  const startedAt = performance.now();
-  const tick = (time) => {
-    const progress = entryStart
-      + clamp((time - startedAt) / remainingDuration, 0, 1) * (1 - entryStart);
-    avatarEntryProgress.value = progress;
-    updateAvatarFall(progress);
-
-    if (progress < 1) {
-      avatarEntryFrame = requestAnimationFrame(tick);
-      return;
-    }
-
-    hasPlayedAvatarEntry = true;
-    isAvatarEntryPlaying = false;
-    avatarEntryFrame = 0;
-    updateAvatarFall(1);
-  };
-
-  avatarEntryFrame = requestAnimationFrame(tick);
-};
-
 const syncAvatarFallWithStory = () => {
   if (!avatarCoin) return;
-
-  if (phaseAvatarProgress.value < 0.08) {
-    stopAvatarEntry();
-    hasPlayedAvatarEntry = false;
-    avatarEntryProgress.value = 0;
-    updateAvatarFall(phaseAvatarProgress.value);
-    return;
-  }
-
-  if (
-    props.storyProgress >= AVATAR_ENTRY_TRIGGER_STORY_PROGRESS
-    && !hasPlayedAvatarEntry
-  ) {
-    playAvatarEntry();
-    return;
-  }
-
-  if (!isAvatarEntryPlaying) {
-    updateAvatarFall(phaseAvatarProgress.value);
-  }
+  updateAvatarFall(phaseAvatarProgress.value);
 };
 
 watch(() => props.storyProgress, () => {
@@ -708,12 +646,13 @@ const resizeRenderer = () => {
 };
 
 const applyEntryVisuals = (time = 0) => {
+  const starEntry = easeInOutCubic(phaseStarProgress.value);
   const photonEntry = easeInOutCubic(phasePhotonProgress.value);
   const photoEntry = easeInOutCubic(phasePhotoProgress.value);
   const pulse = 0.72 + Math.sin(time * 2.2) * 0.1;
 
-  if (starField) starField.material.opacity = 0.9 * photonEntry;
-  if (accentStarField) accentStarField.material.opacity = 0.9 * photonEntry;
+  if (starField) starField.material.opacity = 0.9 * starEntry;
+  if (accentStarField) accentStarField.material.opacity = 0.9 * starEntry;
   if (photonDisk) photonDisk.material.opacity = 0.9 * photonEntry;
   if (photonTree) photonTree.material.opacity = pulse * photonEntry;
   if (photonBeam) photonBeam.material.opacity = 0.9 * photonEntry;
@@ -781,7 +720,7 @@ const animate = (time = 0) => {
     starField.rotation.y = t * 0.015;
   }
 
-  if (avatarCoin && getAvatarVisualProgress() >= 1) {
+  if (avatarCoin && phaseAvatarProgress.value >= 1) {
     avatarCoin.position.set(
       0,
       AVATAR_END_Y + Math.sin(t * 1.35) * 0.12,
@@ -1002,7 +941,6 @@ onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange);
   motionMediaQuery?.removeEventListener?.('change', handleMotionPreferenceChange);
   stopAnimation();
-  cancelAnimationFrame(avatarEntryFrame);
   resizeObserver?.disconnect();
   sectionObserver?.disconnect();
   document.body.classList.remove('modal-open');
@@ -1039,6 +977,13 @@ onBeforeUnmount(() => {
   background:
     radial-gradient(circle at 50% 62%, rgba(50, 142, 168, 0.022), transparent 34%),
     linear-gradient(180deg, #010408 0%, #010305 42%, #000102 72%, #000 100%);
+}
+
+.album-section.is-entry-handoff {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
 }
 
 .album-stage {

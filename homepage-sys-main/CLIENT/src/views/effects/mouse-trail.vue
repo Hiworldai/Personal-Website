@@ -8,13 +8,15 @@
     <div class="dawn-transition-shell">
       <ExperienceSection
         :dawn-progress="heroProgress"
-        :album-transition-progress="albumStoryProgress"
+        :album-transition-progress="0"
       />
     </div>
+    <CloudDissolveTransition :progress="dissolveProgress" />
     <div
       ref="albumShellRef"
       class="album-transition-shell"
       :class="{ 'is-album-ready': albumVisualReady }"
+      :style="albumShellStyle"
     >
       <div
         ref="albumSentinelRef"
@@ -23,7 +25,7 @@
       ></div>
       <AlbumSection
         v-if="shouldLoadAlbum"
-        :story-progress="albumStoryProgress"
+        :story-progress="dissolveProgress"
         @ready="handleAlbumReady"
       />
     </div>
@@ -76,6 +78,16 @@ const heroFadeStyle = computed(() => {
   };
 });
 
+const dissolveProgress = computed(() => clamp(
+  (albumStoryProgress.value - 0.28) / 0.72,
+  0,
+  1
+));
+
+const albumShellStyle = computed(() => ({
+  '--album-shell-opacity': `${getRangeProgress(dissolveProgress.value, 0.08, 0.2)}`
+}));
+
 let scrollFrame = 0;
 let scrollAnimationFrame = 0;
 let albumLoadTimer = 0;
@@ -97,6 +109,11 @@ const AlbumSection = defineAsyncComponent({
   delay: 0
 });
 
+const CloudDissolveTransition = defineAsyncComponent({
+  loader: () => import('./modules/experience/CloudDissolveTransition.vue'),
+  delay: 0
+});
+
 const ExperienceSection = defineAsyncComponent({
   loader: () => import('./modules/experience/ExperienceSection.vue'),
   delay: 0
@@ -108,11 +125,11 @@ const updateHeroProgress = () => {
   const fadeDistance = Math.max(1, window.innerHeight);
   heroProgress.value = clamp(window.scrollY / fadeDistance, 0, 1);
 
-  const albumTrigger = document.querySelector('.album-section') || albumShellRef.value || albumSentinelRef.value;
+  const albumTrigger = albumShellRef.value || albumSentinelRef.value;
   if (albumTrigger) {
     const sectionTop = window.scrollY + albumTrigger.getBoundingClientRect().top;
     const viewportHeight = window.innerHeight;
-    const preludeDistance = viewportHeight * 0.72;
+    const preludeDistance = viewportHeight * 1.55;
     const storyStart = sectionTop - preludeDistance;
     albumStoryProgress.value = clamp(
       (window.scrollY - storyStart) / Math.max(preludeDistance, 1),
@@ -291,7 +308,8 @@ onBeforeUnmount(() => {
   z-index: 2;
   min-height: 100svh;
   margin-top: -28svh;
-  overflow: hidden;
+  overflow: visible;
+  opacity: var(--album-shell-opacity, 0);
   background:
     radial-gradient(circle at 50% 60%, rgba(85, 222, 255, 0.045), transparent 38%),
     radial-gradient(circle at 18% 18%, rgba(132, 229, 255, 0.03), transparent 26%),
@@ -302,11 +320,13 @@ onBeforeUnmount(() => {
       #010305 70%,
       #000 100%
     );
+  will-change: opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .album-transition-shell {
     margin-top: 0;
+    opacity: 1;
   }
 }
 

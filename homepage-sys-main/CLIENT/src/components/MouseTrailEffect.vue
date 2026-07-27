@@ -61,11 +61,11 @@ const props = defineProps({
   },
   splatRadius: {
     type: Number,
-    default: 0.0048
+    default: 0.0036
   },
   curl: {
     type: Number,
-    default: 28
+    default: 22
   }
 });
 
@@ -129,25 +129,28 @@ const handleVisibilityChange = () => {
 };
 
 const config = {
-  textureDownsample: 1,
-  densityDissipation: 0.982,
-  velocityDissipation: 0.985,
+  textureDownsample: 2,
+  densityDissipation: 0.976,
+  velocityDissipation: 0.982,
   pressureDissipation: 0.8,
-  pressureIterations: 24
+  pressureIterations: 18
 };
 
 const palette = [
-  [0.02, 0.9, 1.0],
-  [0.0, 0.62, 0.98],
-  [0.1, 0.98, 0.86],
-  [0.2, 0.76, 1.0]
+  [0.04, 0.78, 0.9],
+  [0.03, 0.56, 0.84],
+  [0.1, 0.88, 0.78],
+  [0.2, 0.68, 0.94]
 ];
 
 const pointer = {
   x: 0,
   y: 0,
+  injectedX: 0,
+  injectedY: 0,
   dx: 0,
   dy: 0,
+  initialized: false,
   moved: false,
   color: palette[0]
 };
@@ -197,30 +200,54 @@ const getCanvasPoint = (event) => {
 };
 
 const pickColor = (x, y) => {
-  const index = Math.abs(Math.floor((x + y + performance.now() * 0.08) / 160)) % palette.length;
-  return palette[index];
+  const position = Math.abs((x + y + performance.now() * 0.035) / 240);
+  const index = Math.floor(position) % palette.length;
+  const nextIndex = (index + 1) % palette.length;
+  const mix = position - Math.floor(position);
+
+  return palette[index].map((channel, channelIndex) => (
+    channel + (palette[nextIndex][channelIndex] - channel) * mix
+  ));
 };
 
 const movePointer = (clientX, clientY) => {
   const point = getCanvasPoint({ clientX, clientY });
+
+  if (!pointer.initialized) {
+    pointer.x = point.x;
+    pointer.y = point.y;
+    pointer.injectedX = point.x;
+    pointer.injectedY = point.y;
+    pointer.initialized = true;
+    return;
+  }
+
   const dx = point.x - pointer.x;
   const dy = point.y - pointer.y;
+  const distance = Math.hypot(dx, dy);
 
-  pointer.dx = dx * 8;
-  pointer.dy = dy * 8;
+  if (distance < 0.25) return;
+
+  pointer.dx += (dx * 5.5 - pointer.dx) * 0.58;
+  pointer.dy += (dy * 5.5 - pointer.dy) * 0.58;
   pointer.x = point.x;
   pointer.y = point.y;
   pointer.color = pickColor(point.x, point.y);
-  pointer.moved = Math.abs(dx) + Math.abs(dy) > 0;
+  pointer.moved = true;
 
   if (fallbackContext) {
-    fallbackPoints.push({
-      x: point.x,
-      y: point.y,
-      radius: 72 + Math.min(Math.hypot(dx, dy) * 2, 110),
-      life: 1,
-      color: pointer.color
-    });
+    const sampleCount = clamp(Math.ceil(distance / 32), 1, 4);
+    for (let i = 1; i <= sampleCount; i += 1) {
+      const progress = i / sampleCount;
+      fallbackPoints.push({
+        x: point.x - dx * (1 - progress),
+        y: point.y - dy * (1 - progress),
+        radius: 36 + Math.min(distance * 0.9, 54),
+        life: 0.78,
+        color: pointer.color
+      });
+    }
+    if (fallbackPoints.length > 56) fallbackPoints.splice(0, fallbackPoints.length - 56);
   }
 };
 
@@ -464,14 +491,14 @@ const startFallbackCanvas = () => {
     fallbackContext.fillStyle = 'rgba(6, 8, 10, 0.08)';
     fallbackContext.fillRect(0, 0, canvas.width, canvas.height);
     fallbackContext.globalCompositeOperation = 'screen';
-    fallbackContext.filter = 'blur(18px)';
+    fallbackContext.filter = 'blur(12px)';
 
     fallbackPoints = fallbackPoints.filter((point) => point.life > 0.02);
     fallbackPoints.forEach((point) => {
-      point.life -= dt * 0.82;
-      point.radius += dt * 30;
+      point.life -= dt * 1.08;
+      point.radius += dt * 22;
       const gradient = fallbackContext.createRadialGradient(point.x, point.y, 0, point.x, point.y, point.radius);
-      gradient.addColorStop(0, `rgba(${point.color[0] * 200}, ${point.color[1] * 200}, ${point.color[2] * 200}, ${point.life * 0.5})`);
+      gradient.addColorStop(0, `rgba(${point.color[0] * 190}, ${point.color[1] * 190}, ${point.color[2] * 190}, ${point.life * 0.42})`);
       gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
       fallbackContext.fillStyle = gradient;
       fallbackContext.beginPath();
@@ -737,7 +764,7 @@ void main () {
     velocity.swap();
 
     gl.uniform1i(splatProgram.uniforms.uTarget, density.read[2]);
-    gl.uniform3f(splatProgram.uniforms.color, color[0] * 0.28, color[1] * 0.28, color[2] * 0.28);
+    gl.uniform3f(splatProgram.uniforms.color, color[0] * 0.19, color[1] * 0.19, color[2] * 0.19);
     blit(density.write[1]);
     density.swap();
   };
@@ -754,7 +781,7 @@ void main () {
   };
 
   resizeCanvas();
-  multipleSplats(7);
+  multipleSplats(3);
 
   let lastTime = performance.now();
   const update = (time) => {
@@ -786,7 +813,26 @@ void main () {
     density.swap();
 
     if (pointer.moved) {
-      splat(pointer.x, pointer.y, pointer.dx, pointer.dy, pointer.color);
+      const trailDx = pointer.x - pointer.injectedX;
+      const trailDy = pointer.y - pointer.injectedY;
+      const trailDistance = Math.hypot(trailDx, trailDy);
+      const sampleCount = clamp(Math.ceil(trailDistance / 44), 1, 4);
+
+      for (let i = 1; i <= sampleCount; i += 1) {
+        const progress = i / sampleCount;
+        splat(
+          pointer.injectedX + trailDx * progress,
+          pointer.injectedY + trailDy * progress,
+          pointer.dx * 0.72,
+          pointer.dy * 0.72,
+          pointer.color
+        );
+      }
+
+      pointer.injectedX = pointer.x;
+      pointer.injectedY = pointer.y;
+      pointer.dx *= 0.7;
+      pointer.dy *= 0.7;
       pointer.moved = false;
     }
 
