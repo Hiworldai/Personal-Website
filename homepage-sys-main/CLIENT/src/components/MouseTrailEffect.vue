@@ -61,11 +61,11 @@ const props = defineProps({
   },
   splatRadius: {
     type: Number,
-    default: 0.0036
+    default: 0.0014
   },
   curl: {
     type: Number,
-    default: 22
+    default: 20
   }
 });
 
@@ -130,8 +130,8 @@ const handleVisibilityChange = () => {
 
 const config = {
   textureDownsample: 2,
-  densityDissipation: 0.976,
-  velocityDissipation: 0.982,
+  densityDissipation: 0.971,
+  velocityDissipation: 0.979,
   pressureDissipation: 0.8,
   pressureIterations: 18
 };
@@ -156,6 +156,13 @@ const pointer = {
 };
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+const resetPointer = () => {
+  pointer.dx = 0;
+  pointer.dy = 0;
+  pointer.moved = false;
+  pointer.initialized = false;
+};
 
 const hideBrokenAvatar = () => {
   avatarVisible.value = false;
@@ -228,8 +235,8 @@ const movePointer = (clientX, clientY) => {
 
   if (distance < 0.25) return;
 
-  pointer.dx += (dx * 5.5 - pointer.dx) * 0.58;
-  pointer.dy += (dy * 5.5 - pointer.dy) * 0.58;
+  pointer.dx += (dx * 4.2 - pointer.dx) * 0.58;
+  pointer.dy += (dy * 4.2 - pointer.dy) * 0.58;
   pointer.x = point.x;
   pointer.y = point.y;
   pointer.color = pickColor(point.x, point.y);
@@ -269,6 +276,7 @@ const shouldEnableTouchTrail = () => {
 };
 
 const handleResize = () => {
+  resetPointer();
   resizeCanvas();
   shouldTrackTouch = shouldEnableTouchTrail();
 };
@@ -764,24 +772,12 @@ void main () {
     velocity.swap();
 
     gl.uniform1i(splatProgram.uniforms.uTarget, density.read[2]);
-    gl.uniform3f(splatProgram.uniforms.color, color[0] * 0.19, color[1] * 0.19, color[2] * 0.19);
+    gl.uniform3f(splatProgram.uniforms.color, color[0] * 0.15, color[1] * 0.15, color[2] * 0.15);
     blit(density.write[1]);
     density.swap();
   };
 
-  const multipleSplats = (amount) => {
-    for (let i = 0; i < amount; i += 1) {
-      const color = palette[i % palette.length];
-      const x = canvasRef.value.width * (0.2 + Math.random() * 0.6);
-      const y = canvasRef.value.height * (0.25 + Math.random() * 0.5);
-      const dx = 700 * (Math.random() - 0.5);
-      const dy = 700 * (Math.random() - 0.5);
-      splat(x, y, dx, dy, color);
-    }
-  };
-
   resizeCanvas();
-  multipleSplats(3);
 
   let lastTime = performance.now();
   const update = (time) => {
@@ -823,8 +819,8 @@ void main () {
         splat(
           pointer.injectedX + trailDx * progress,
           pointer.injectedY + trailDy * progress,
-          pointer.dx * 0.72,
-          pointer.dy * 0.72,
+          pointer.dx * 0.58,
+          pointer.dy * 0.58,
           pointer.color
         );
       }
@@ -901,13 +897,17 @@ onMounted(() => {
   window.addEventListener('scroll', handleWindowScroll, { passive: true });
   window.addEventListener('pointermove', handlePointerMove, { passive: true });
   window.addEventListener('touchmove', handleTouchMove, { passive: true });
+  window.addEventListener('blur', resetPointer);
   document.addEventListener('visibilitychange', handleVisibilityChange);
 
   if ('IntersectionObserver' in window && rootRef.value) {
     intersectionObserver = new IntersectionObserver(([entry]) => {
       isVisible = entry.isIntersecting;
       if (isVisible) startRendering();
-      else stopRendering();
+      else {
+        resetPointer();
+        stopRendering();
+      }
     }, { rootMargin: '120px 0px', threshold: 0.01 });
     intersectionObserver.observe(rootRef.value);
   }
@@ -918,6 +918,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleWindowScroll);
   window.removeEventListener('pointermove', handlePointerMove);
   window.removeEventListener('touchmove', handleTouchMove);
+  window.removeEventListener('blur', resetPointer);
   document.removeEventListener('visibilitychange', handleVisibilityChange);
   intersectionObserver?.disconnect();
   stopRendering();
@@ -932,7 +933,7 @@ onBeforeUnmount(() => {
   min-height: 520px;
   overflow: hidden;
   background: #02070c;
-  cursor: crosshair;
+  cursor: default;
   isolation: isolate;
 }
 
@@ -942,6 +943,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   z-index: 0;
+  pointer-events: none;
 }
 
 .trail-copy {
